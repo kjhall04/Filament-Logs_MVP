@@ -1,0 +1,70 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Empty Rolls | Filament Logs{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Empty Rolls</h1>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
+</div>
+
+<div class="mb-3">
+    <input type="text" id="searchInput" class="form-control" placeholder="Search...">
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped" id="emptyTable">
+        <thead>
+            <tr>
+                <th style="width:40px;"></th>
+                <th>Brand</th>
+                <th>Color</th>
+                <th>Material</th>
+                <th>Attribute 1</th>
+                <th>Attribute 2</th>
+                <th>Last Logged</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for roll in rolls %}
+            <tr data-favorite="{{ 'true' if roll.is_favorite and roll.is_favorite|lower == 'true' else 'false' }}">
+                <td class="text-center align-middle">
+                    {% if roll.is_favorite and roll.is_favorite|lower == 'true' %}
+                    <span class="favorite-star is-on">&#9733;</span>
+                    {% endif %}
+                </td>
+                <td>{{ roll.brand if roll.brand is not none else '' }}</td>
+                <td>{{ roll.color if roll.color is not none else '' }}</td>
+                <td>{{ roll.material if roll.material is not none else '' }}</td>
+                <td>{{ roll.attribute_1 if roll.attribute_1 is not none else '' }}</td>
+                <td>{{ roll.attribute_2 if roll.attribute_2 is not none else '' }}</td>
+                <td>{{ roll.last_logged if roll.last_logged is not none else '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById("searchInput").addEventListener("input", function () {
+    const filter = this.value.trim().toLowerCase();
+    const rows = document.querySelectorAll("#emptyTable tbody tr");
+
+    rows.forEach((row) => {
+        let match = false;
+        if (filter === "favorite") {
+            match = row.dataset.favorite === "true";
+        } else {
+            row.querySelectorAll("td").forEach((cell) => {
+                if (cell.textContent.toLowerCase().includes(filter)) {
+                    match = true;
+                }
+            });
+        }
+        row.style.display = match ? "" : "none";
+    });
+});
+</script>
+{% endblock %}

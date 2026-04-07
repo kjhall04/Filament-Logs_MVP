@@ -1,0 +1,641 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-02-18 09:38:39",
+  "source": "filament_inventory.db",
+  "levels": {
+    "brand+color+material+attributes": {
+      "3dhojor|green and black|pla|silk|dual color": {
+        "weight": 258.0,
+        "samples": 1
+      },
+      "duramic 3d|wine red|pla+||": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "elegoo|galaxy black|pla|glitter|": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "eryone|aqua blue|pla|matte|": {
+        "weight": 260.0,
+        "samples": 1
+      },
+      "eryone|magenta|pla+|hyper speed|": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "eryone|olive green|pla|matte|": {
+        "weight": 260.0,
+        "samples": 1
+      },
+      "generic|blue|pla+|translucent|": {
+        "weight": 90.0,
+        "samples": 1
+      },
+      "generic|bone white|pla+||": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "generic|bronze|bronze||": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "generic|brown|wood||": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "generic|burnt titanium|pla|glitter|": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "generic|purple|petg|translucent|": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "generic|purple|pla||": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "generic|white|pla|glitter|": {
+        "weight": 186.0,
+        "samples": 1
+      },
+      "hatchbox|blue|petg||": {
+        "weight": 155.0,
+        "samples": 1
+      },
+      "hatchbox|blue|tpu||": {
+        "weight": 242.0,
+        "samples": 1
+      },
+      "hatchbox|bronze|pla|silk|": {
+        "weight": 242.0,
+        "samples": 1
+      },
+      "hatchbox|bronze|pla||": {
+        "weight": 242.0,
+        "samples": 1
+      },
+      "hatchbox|forest green|pla||": {
+        "weight": 242.0,
+        "samples": 1
+      },
+      "hatchbox|purple|pla|uv reactive|": {
+        "weight": 242.0,
+        "samples": 1
+      },
+      "makerbot|black|abs||": {
+        "weight": 280.0,
+        "samples": 1
+      },
+      "matterhackers|green|nylon||": {
+        "weight": 260.0,
+        "samples": 1
+      },
+      "matterhackers|orange|petg|translucent|": {
+        "weight": 280.0,
+        "samples": 1
+      },
+      "overture|black|pla||": {
+        "weight": 155.5,
+        "samples": 6
+      },
+      "overture|blue|pla||": {
+        "weight": 132.0,
+        "samples": 1
+      },
+      "overture|clear|petg|translucent|": {
+        "weight": 156.0,
+        "samples": 1
+      },
+      "overture|gold|pla|silk|": {
+        "weight": 156.0,
+        "samples": 1
+      },
+      "overture|green|pla|silk|": {
+        "weight": 156.0,
+        "samples": 1
+      },
+      "overture|highlight yellow|pla||": {
+        "weight": 156.0,
+        "samples": 1
+      },
+      "overture|light blue|pla|matte|": {
+        "weight": 156.0,
+        "samples": 1
+      },
+      "overture|purple|pla||": {
+        "weight": 156.0,
+        "samples": 1
+      },
+      "overture|red|pla||": {
+        "weight": 158.0,
+        "samples": 2
+      },
+      "overture|sparkle blue|petg|glitter|": {
+        "weight": 156.0,
+        "samples": 1
+      },
+      "overture|white|pla||": {
+        "weight": 156.0,
+        "samples": 2
+      },
+      "overture|yellow|pla||": {
+        "weight": 156.0,
+        "samples": 1
+      },
+      "ovv3d|red, yellow, and blue|pla|triple color|silk": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "polylite|muted white|pla||": {
+        "weight": 140.0,
+        "samples": 2
+      },
+      "polymaker|army beige|pla||": {
+        "weight": 140.0,
+        "samples": 1
+      },
+      "polymaker|army purple|pla||": {
+        "weight": 140.0,
+        "samples": 1
+      },
+      "polymaker|dark gray green|pla||": {
+        "weight": 140.0,
+        "samples": 1
+      },
+      "polymaker|lavender|pla|matte|": {
+        "weight": 140.0,
+        "samples": 1
+      },
+      "polymaker|lime green|pla||": {
+        "weight": 140.0,
+        "samples": 1
+      },
+      "polymaker|peach|pla||": {
+        "weight": 140.0,
+        "samples": 1
+      },
+      "polymaker|sky blue|pla|shiny|": {
+        "weight": 140.0,
+        "samples": 1
+      },
+      "polymaker|teal|pla||": {
+        "weight": 140.0,
+        "samples": 2
+      },
+      "prusa|black|petg||": {
+        "weight": 130.0,
+        "samples": 1
+      },
+      "prusa|galaxy black|pla|glitter|": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "prusa|orange|petg||": {
+        "weight": 130.0,
+        "samples": 1
+      },
+      "prusa|sapphire blue|asa||": {
+        "weight": 240.0,
+        "samples": 1
+      },
+      "r3d|warm gray|pla|matte|": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "stronghero3d|galaxy chameleon|pla|glitter|gradient": {
+        "weight": 240.0,
+        "samples": 1
+      },
+      "stronghero3d|galaxy chameleon|pla|gradient|glitter": {
+        "weight": 210.0,
+        "samples": 1
+      },
+      "sunlu|red|pla||": {
+        "weight": 155.0,
+        "samples": 1
+      },
+      "tecsonar|rainbow forest|pla|silk|": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "ziro|fluorescent yellow|pla||": {
+        "weight": 164.0,
+        "samples": 1
+      },
+      "ziro|silver|pla|silk|": {
+        "weight": 164.0,
+        "samples": 1
+      }
+    },
+    "brand+material+attributes": {
+      "3dhojor|pla|silk|dual color": {
+        "weight": 258.0,
+        "samples": 1
+      },
+      "duramic 3d|pla+||": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "elegoo|pla|glitter|": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "eryone|pla+|hyper speed|": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "eryone|pla|matte|": {
+        "weight": 260.0,
+        "samples": 2
+      },
+      "generic|bronze||": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "generic|petg|translucent|": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "generic|pla+|translucent|": {
+        "weight": 90.0,
+        "samples": 1
+      },
+      "generic|pla+||": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "generic|pla|glitter|": {
+        "weight": 218.0,
+        "samples": 2
+      },
+      "generic|pla||": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "generic|wood||": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "hatchbox|petg||": {
+        "weight": 155.0,
+        "samples": 1
+      },
+      "hatchbox|pla|silk|": {
+        "weight": 242.0,
+        "samples": 1
+      },
+      "hatchbox|pla|uv reactive|": {
+        "weight": 242.0,
+        "samples": 1
+      },
+      "hatchbox|pla||": {
+        "weight": 242.0,
+        "samples": 2
+      },
+      "hatchbox|tpu||": {
+        "weight": 242.0,
+        "samples": 1
+      },
+      "makerbot|abs||": {
+        "weight": 280.0,
+        "samples": 1
+      },
+      "matterhackers|nylon||": {
+        "weight": 260.0,
+        "samples": 1
+      },
+      "matterhackers|petg|translucent|": {
+        "weight": 280.0,
+        "samples": 1
+      },
+      "overture|petg|glitter|": {
+        "weight": 156.0,
+        "samples": 1
+      },
+      "overture|petg|translucent|": {
+        "weight": 156.0,
+        "samples": 1
+      },
+      "overture|pla|matte|": {
+        "weight": 156.0,
+        "samples": 1
+      },
+      "overture|pla|silk|": {
+        "weight": 156.0,
+        "samples": 2
+      },
+      "overture|pla||": {
+        "weight": 156.0,
+        "samples": 14
+      },
+      "ovv3d|pla|triple color|silk": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "polylite|pla||": {
+        "weight": 140.0,
+        "samples": 2
+      },
+      "polymaker|pla|matte|": {
+        "weight": 140.0,
+        "samples": 1
+      },
+      "polymaker|pla|shiny|": {
+        "weight": 140.0,
+        "samples": 1
+      },
+      "polymaker|pla||": {
+        "weight": 140.0,
+        "samples": 7
+      },
+      "prusa|asa||": {
+        "weight": 240.0,
+        "samples": 1
+      },
+      "prusa|petg||": {
+        "weight": 130.0,
+        "samples": 2
+      },
+      "prusa|pla|glitter|": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "r3d|pla|matte|": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "stronghero3d|pla|glitter|gradient": {
+        "weight": 240.0,
+        "samples": 1
+      },
+      "stronghero3d|pla|gradient|glitter": {
+        "weight": 210.0,
+        "samples": 1
+      },
+      "sunlu|pla||": {
+        "weight": 155.0,
+        "samples": 1
+      },
+      "tecsonar|pla|silk|": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "ziro|pla|silk|": {
+        "weight": 164.0,
+        "samples": 1
+      },
+      "ziro|pla||": {
+        "weight": 164.0,
+        "samples": 1
+      }
+    },
+    "brand+material": {
+      "3dhojor|pla": {
+        "weight": 258.0,
+        "samples": 1
+      },
+      "duramic 3d|pla+": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "elegoo|pla": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "eryone|pla": {
+        "weight": 260.0,
+        "samples": 2
+      },
+      "eryone|pla+": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "generic|bronze": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "generic|petg": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "generic|pla": {
+        "weight": 250.0,
+        "samples": 3
+      },
+      "generic|pla+": {
+        "weight": 125.0,
+        "samples": 2
+      },
+      "generic|wood": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "hatchbox|petg": {
+        "weight": 155.0,
+        "samples": 1
+      },
+      "hatchbox|pla": {
+        "weight": 242.0,
+        "samples": 4
+      },
+      "hatchbox|tpu": {
+        "weight": 242.0,
+        "samples": 1
+      },
+      "makerbot|abs": {
+        "weight": 280.0,
+        "samples": 1
+      },
+      "matterhackers|nylon": {
+        "weight": 260.0,
+        "samples": 1
+      },
+      "matterhackers|petg": {
+        "weight": 280.0,
+        "samples": 1
+      },
+      "overture|petg": {
+        "weight": 156.0,
+        "samples": 2
+      },
+      "overture|pla": {
+        "weight": 156.0,
+        "samples": 17
+      },
+      "ovv3d|pla": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "polylite|pla": {
+        "weight": 140.0,
+        "samples": 2
+      },
+      "polymaker|pla": {
+        "weight": 140.0,
+        "samples": 9
+      },
+      "prusa|asa": {
+        "weight": 240.0,
+        "samples": 1
+      },
+      "prusa|petg": {
+        "weight": 130.0,
+        "samples": 2
+      },
+      "prusa|pla": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "r3d|pla": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "stronghero3d|pla": {
+        "weight": 225.0,
+        "samples": 2
+      },
+      "sunlu|pla": {
+        "weight": 155.0,
+        "samples": 1
+      },
+      "tecsonar|pla": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "ziro|pla": {
+        "weight": 164.0,
+        "samples": 2
+      }
+    },
+    "material+attributes": {
+      "abs||": {
+        "weight": 280.0,
+        "samples": 1
+      },
+      "asa||": {
+        "weight": 240.0,
+        "samples": 1
+      },
+      "bronze||": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "nylon||": {
+        "weight": 260.0,
+        "samples": 1
+      },
+      "petg|glitter|": {
+        "weight": 156.0,
+        "samples": 1
+      },
+      "petg|translucent|": {
+        "weight": 250.0,
+        "samples": 3
+      },
+      "petg||": {
+        "weight": 130.0,
+        "samples": 3
+      },
+      "pla+|hyper speed|": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "pla+|translucent|": {
+        "weight": 90.0,
+        "samples": 1
+      },
+      "pla+||": {
+        "weight": 160.0,
+        "samples": 2
+      },
+      "pla|glitter|": {
+        "weight": 250.0,
+        "samples": 4
+      },
+      "pla|glitter|gradient": {
+        "weight": 240.0,
+        "samples": 1
+      },
+      "pla|gradient|glitter": {
+        "weight": 210.0,
+        "samples": 1
+      },
+      "pla|matte|": {
+        "weight": 160.0,
+        "samples": 5
+      },
+      "pla|shiny|": {
+        "weight": 140.0,
+        "samples": 1
+      },
+      "pla|silk|": {
+        "weight": 160.0,
+        "samples": 5
+      },
+      "pla|silk|dual color": {
+        "weight": 258.0,
+        "samples": 1
+      },
+      "pla|triple color|silk": {
+        "weight": 160.0,
+        "samples": 1
+      },
+      "pla|uv reactive|": {
+        "weight": 242.0,
+        "samples": 1
+      },
+      "pla||": {
+        "weight": 155.5,
+        "samples": 28
+      },
+      "tpu||": {
+        "weight": 242.0,
+        "samples": 1
+      },
+      "wood||": {
+        "weight": 250.0,
+        "samples": 1
+      }
+    },
+    "material": {
+      "abs": {
+        "weight": 280.0,
+        "samples": 1
+      },
+      "asa": {
+        "weight": 240.0,
+        "samples": 1
+      },
+      "bronze": {
+        "weight": 250.0,
+        "samples": 1
+      },
+      "nylon": {
+        "weight": 260.0,
+        "samples": 1
+      },
+      "petg": {
+        "weight": 156.0,
+        "samples": 7
+      },
+      "pla": {
+        "weight": 156.0,
+        "samples": 48
+      },
+      "pla+": {
+        "weight": 160.0,
+        "samples": 4
+      },
+      "tpu": {
+        "weight": 242.0,
+        "samples": 1
+      },
+      "wood": {
+        "weight": 250.0,
+        "samples": 1
+      }
+    }
+  }
+}

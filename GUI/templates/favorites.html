@@ -1,0 +1,68 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Favorites | Filament Logs{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Favorite Filaments</h1>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
+</div>
+
+<div class="mb-3">
+    <input type="text" id="searchInput" class="form-control" placeholder="Search favorites...">
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped" id="favoritesTable">
+        <thead>
+            <tr>
+                <th>Brand</th>
+                <th>Color</th>
+                <th>Material</th>
+                <th>Attribute 1</th>
+                <th>Attribute 2</th>
+                <th>Count</th>
+                <th>Low</th>
+                <th>Buy</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fav in favorites %}
+            <tr>
+                <td>{{ fav.brand or '' }}</td>
+                <td>{{ fav.color or '' }}</td>
+                <td>{{ fav.material or '' }}</td>
+                <td>{{ fav.attribute_1 or '' }}</td>
+                <td>{{ fav.attribute_2 or '' }}</td>
+                <td>{{ fav.total_count }}</td>
+                <td>{{ fav.low_count }}</td>
+                <td>
+                    {% if fav.amazon_url %}
+                    <a href="{{ fav.amazon_url }}" target="_blank" class="btn btn-sm btn-primary">Amazon</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById("searchInput").addEventListener("input", function () {
+    const filter = this.value.trim().toLowerCase();
+    const rows = document.querySelectorAll("#favoritesTable tbody tr");
+
+    rows.forEach((row) => {
+        let match = false;
+        row.querySelectorAll("td").forEach((cell) => {
+            if (cell.textContent.toLowerCase().includes(filter)) {
+                match = true;
+            }
+        });
+        row.style.display = match ? "" : "none";
+    });
+});
+</script>
+{% endblock %}

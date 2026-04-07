@@ -1,0 +1,264 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Settings | Filament Logs{% endblock %}
+
+{% block head_extra %}
+<style>
+    .settings-form .form-label {
+        font-weight: 600;
+    }
+
+    .settings-form .form-select {
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3e%3cpath fill='%23201870' d='M1.5 1.5L8 8l6.5-6.5L16 3 8 10 0 3z'/%3e%3c/svg%3e");
+        background-size: 0.9rem;
+    }
+
+    .settings-form input[type="number"] {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .settings-form input[type="number"]::-webkit-outer-spin-button,
+    .settings-form input[type="number"]::-webkit-inner-spin-button {
+        opacity: 1;
+        margin: 0;
+        cursor: pointer;
+        border-left: 1px solid var(--app-border);
+        background: linear-gradient(
+            180deg,
+            rgba(var(--app-accent-rgb), 0.14),
+            rgba(var(--app-accent-2-rgb), 0.2)
+        );
+    }
+
+    .settings-form .form-check-input,
+    .settings-form .form-check-label {
+        cursor: pointer;
+    }
+
+    .settings-toggle {
+        display: inline-flex;
+        gap: 0.5rem;
+        padding: 0.3rem;
+        border-radius: 0.8rem;
+        background-color: var(--app-surface-soft);
+        border: 1px solid var(--app-border);
+    }
+
+    .settings-tab {
+        border: 1px solid transparent;
+        background-color: transparent;
+        color: var(--app-text);
+        border-radius: 0.55rem;
+        padding: 0.35rem 0.8rem;
+        font-weight: 600;
+    }
+
+    .settings-tab.is-active {
+        background-color: var(--app-surface);
+        border-color: var(--app-border);
+        box-shadow: 0 4px 10px rgba(var(--app-accent-rgb), 0.18);
+    }
+
+    .settings-pane {
+        display: none;
+    }
+
+    .settings-pane.is-visible {
+        display: block;
+    }
+
+    html[data-theme="dark"] .settings-form .form-select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3e%3cpath fill='%23b6c0ff' d='M1.5 1.5L8 8l6.5-6.5L16 3 8 10 0 3z'/%3e%3c/svg%3e");
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Settings</h1>
+
+<form method="post" class="card p-3 p-md-4 settings-form">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="settings-toggle" role="tablist" aria-label="Settings sections">
+            <button type="button" class="settings-tab is-active" id="generalTab" data-pane="generalPane">General</button>
+            <button type="button" class="settings-tab" id="advancedTab" data-pane="advancedPane">Advanced</button>
+        </div>
+        <small class="text-muted">All values save together.</small>
+    </div>
+
+    <section id="generalPane" class="settings-pane is-visible">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="theme" class="form-label">Theme</label>
+                <select class="form-select" id="theme" name="theme">
+                    {% for option in theme_options %}
+                    <option value="{{ option }}" {% if settings.theme == option %}selected{% endif %}>{{ option|capitalize }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="alert_mode" class="form-label">Alert Handling</label>
+                <select class="form-select" id="alert_mode" name="alert_mode">
+                    {% for option in alert_mode_options %}
+                    <option value="{{ option }}" {% if settings.alert_mode == option %}selected{% endif %}>
+                        {% if option == 'all' %}Show all banners{% endif %}
+                        {% if option == 'errors_only' %}Only show errors{% endif %}
+                        {% if option == 'silent' %}Silent mode{% endif %}
+                        {% if option == 'browser' %}Browser notifications{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="rows_per_page" class="form-label">Rows Per Page</label>
+                <input type="number" min="5" max="200" class="form-control" id="rows_per_page" name="rows_per_page" value="{{ settings.rows_per_page }}">
+            </div>
+
+            <div class="col-md-6">
+                <label for="default_location" class="form-label">Default New-Roll Location</label>
+                <select class="form-select" id="default_location" name="default_location">
+                    <option value="Lab" {% if settings.default_location == 'Lab' %}selected{% endif %}>Lab</option>
+                    <option value="Storage" {% if settings.default_location == 'Storage' %}selected{% endif %}>Storage</option>
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="default_roll_condition" class="form-label">Default Roll Condition</label>
+                <select class="form-select" id="default_roll_condition" name="default_roll_condition">
+                    {% for option in roll_condition_options %}
+                    <option value="{{ option }}" {% if settings.default_roll_condition == option %}selected{% endif %}>
+                        {% if option == 'new' %}New / Full Roll{% else %}Used / Partial Roll{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="popular_weeks" class="form-label">Default Popular Window (weeks)</label>
+                <input type="number" min="0" max="104" class="form-control" id="popular_weeks" name="popular_weeks" value="{{ settings.popular_weeks }}">
+            </div>
+
+            <div class="col-md-6">
+                <label for="filament_amount_g" class="form-label">Configured Filament Amount (g)</label>
+                <input type="number" min="100" max="10000" step="0.01" class="form-control" id="filament_amount_g" name="filament_amount_g" value="{{ settings.filament_amount_g }}">
+            </div>
+
+            <div class="col-md-3">
+                <label for="low_threshold_g" class="form-label">Low Threshold (g)</label>
+                <input type="number" min="0" max="10000" step="0.01" class="form-control" id="low_threshold_g" name="low_threshold_g" value="{{ settings.low_threshold_g }}">
+            </div>
+
+            <div class="col-md-3">
+                <label for="empty_threshold_g" class="form-label">Empty Threshold (g)</label>
+                <input type="number" min="0" max="1000" step="0.01" class="form-control" id="empty_threshold_g" name="empty_threshold_g" value="{{ settings.empty_threshold_g }}">
+            </div>
+
+            <div class="col-12">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="low_stock_alerts" name="low_stock_alerts" {% if settings.low_stock_alerts %}checked{% endif %}>
+                    <label class="form-check-label" for="low_stock_alerts">
+                        Enable low-stock warnings after logging usage
+                    </label>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="advancedPane" class="settings-pane">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="used_roll_map_fallback_level" class="form-label">Used-Roll Map Fallback Level</label>
+                <select class="form-select" id="used_roll_map_fallback_level" name="used_roll_map_fallback_level">
+                    {% for option in used_roll_map_level_options %}
+                    <option value="{{ option }}" {% if settings.used_roll_map_fallback_level == option %}selected{% endif %}>
+                        {% if option == 'brand+color+material+attributes' %}Brand + Color + Material + Attributes{% endif %}
+                        {% if option == 'brand+material+attributes' %}Brand + Material + Attributes{% endif %}
+                        {% if option == 'brand+material' %}Brand + Material{% endif %}
+                        {% if option == 'material+attributes' %}Material + Attributes{% endif %}
+                        {% if option == 'material' %}Material Only{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="used_roll_map_min_samples" class="form-label">Used-Roll Min Samples</label>
+                <input type="number" min="1" max="1000" class="form-control" id="used_roll_map_min_samples" name="used_roll_map_min_samples" value="{{ settings.used_roll_map_min_samples }}">
+            </div>
+
+            <div class="col-md-6">
+                <label for="scale_timeout_sec" class="form-label">Scale Timeout (seconds)</label>
+                <input type="number" min="1" max="60" class="form-control" id="scale_timeout_sec" name="scale_timeout_sec" value="{{ settings.scale_timeout_sec }}">
+            </div>
+
+            <div class="col-md-6">
+                <label for="scale_retry_count" class="form-label">Scale Retry Count</label>
+                <input type="number" min="1" max="10" class="form-control" id="scale_retry_count" name="scale_retry_count" value="{{ settings.scale_retry_count }}">
+            </div>
+
+            <div class="col-md-6">
+                <label for="negative_filament_policy" class="form-label">Negative Filament Policy</label>
+                <select class="form-select" id="negative_filament_policy" name="negative_filament_policy">
+                    {% for option in negative_filament_policy_options %}
+                    <option value="{{ option }}" {% if settings.negative_filament_policy == option %}selected{% endif %}>
+                        {% if option == 'block' %}Block Save{% endif %}
+                        {% if option == 'warn' %}Warn and Clamp to 0{% endif %}
+                        {% if option == 'clamp_to_zero' %}Clamp to 0{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="backup_retention_days" class="form-label">Backup Retention (days)</label>
+                <input type="number" min="1" max="3650" class="form-control" id="backup_retention_days" name="backup_retention_days" value="{{ settings.backup_retention_days }}">
+            </div>
+
+            <div class="col-12">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="auto_read_scale_on_weight_step" name="auto_read_scale_on_weight_step" {% if settings.auto_read_scale_on_weight_step %}checked{% endif %}>
+                    <label class="form-check-label" for="auto_read_scale_on_weight_step">
+                        Auto-read scale when Add-Roll weight step opens
+                    </label>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="auto_backup_on_write" name="auto_backup_on_write" {% if settings.auto_backup_on_write %}checked{% endif %}>
+                    <label class="form-check-label" for="auto_backup_on_write">
+                        Auto-backup database before each write
+                    </label>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const tabs = Array.from(document.querySelectorAll(".settings-tab"));
+const panes = Array.from(document.querySelectorAll(".settings-pane"));
+
+function showPane(targetId) {
+    tabs.forEach((tab) => {
+        tab.classList.toggle("is-active", tab.dataset.pane === targetId);
+    });
+    panes.forEach((pane) => {
+        pane.classList.toggle("is-visible", pane.id === targetId);
+    });
+}
+
+tabs.forEach((tab) => {
+    tab.addEventListener("click", () => showPane(tab.dataset.pane));
+});
+</script>
+{% endblock %}

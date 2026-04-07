@@ -1,0 +1,75 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Log Usage | Filament Logs{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Log Filament Usage</h1>
+
+<form id="logForm" method="post" autocomplete="off" novalidate>
+    <div class="d-flex gap-2 mb-3">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
+        <button type="submit" class="btn btn-primary">Log Usage</button>
+    </div>
+
+    <div class="mb-3">
+        <label for="barcode" class="form-label">Barcode</label>
+        <input
+            type="text"
+            class="form-control"
+            id="barcode"
+            name="barcode"
+            value="{{ form_data.barcode if form_data else '' }}"
+            autocomplete="off"
+        >
+        <small class="form-text">Scan or type the barcode for the roll.</small>
+    </div>
+
+    <div class="mb-3">
+        <label for="weight" class="form-label">Current Roll Weight (g)</label>
+        <div class="input-group">
+            <input
+                type="text"
+                class="form-control"
+                id="weight"
+                name="weight"
+                value="{{ form_data.weight if form_data else '' }}"
+                autocomplete="off"
+            >
+            <button class="btn btn-outline-secondary" type="button" id="getWeightBtn">Get Weight</button>
+        </div>
+        <small class="form-text">Enter the total measured roll weight from the scale.</small>
+        <div id="scaleStatus" class="form-text"></div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById("barcode").addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        setTimeout(() => document.getElementById("weight").focus(), 40);
+    }
+});
+
+document.getElementById("getWeightBtn").addEventListener("click", async function () {
+    const status = document.getElementById("scaleStatus");
+    status.textContent = "Reading from scale...";
+
+    try {
+        const response = await fetch("{{ url_for('api_scale_weight') }}");
+        const payload = await response.json();
+
+        if (!response.ok || typeof payload.weight !== "number") {
+            status.textContent = payload.error ? `Scale error: ${payload.error}` : "Scale read failed.";
+            return;
+        }
+
+        document.getElementById("weight").value = payload.weight.toFixed(2);
+        status.textContent = "Weight captured from scale.";
+    } catch (_) {
+        status.textContent = "Unable to reach the scale endpoint.";
+    }
+});
+</script>
+{% endblock %}

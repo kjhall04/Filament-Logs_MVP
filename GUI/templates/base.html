@@ -1,0 +1,513 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="{{ app_settings.theme }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Filament Logs{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --app-bg: #eef0f8;
+            --app-surface: #ffffff;
+            --app-surface-soft: #f4f6fd;
+            --app-text: #1d1a47;
+            --app-muted: #676b8d;
+            --app-border: #cfd4e6;
+            --app-striped: #f7f8fe;
+            --app-hover: #ebeffc;
+            --app-accent: #201870;
+            --app-accent-rgb: 32, 24, 112;
+            --app-accent-2: #88c038;
+            --app-accent-2-rgb: 136, 192, 56;
+            --app-button-solid: #6caf33;
+            --app-button-solid-hover: #5d9a2c;
+            --app-accent-contrast: #ffffff;
+            --app-gradient: linear-gradient(120deg, #201870 0%, #88c038 100%);
+            --app-navbar-bg: rgba(255, 255, 255, 0.9);
+            --app-bg-image:
+                radial-gradient(70rem 42rem at -10% -16%, rgba(32, 24, 112, 0.2), transparent 58%),
+                radial-gradient(58rem 32rem at 112% -12%, rgba(136, 192, 56, 0.2), transparent 55%),
+                linear-gradient(180deg, #f8f9ff 0%, #eef0f8 100%);
+            --app-card-shadow: 0 10px 24px rgba(21, 20, 54, 0.1);
+
+            --bs-body-bg: var(--app-bg);
+            --bs-body-color: var(--app-text);
+            --bs-secondary-color: var(--app-muted);
+            --bs-emphasis-color: var(--app-text);
+            --bs-border-color: var(--app-border);
+            --bs-tertiary-bg: var(--app-surface);
+        }
+
+        html[data-theme="dark"] {
+            --app-bg: #0f1226;
+            --app-surface: #181d39;
+            --app-surface-soft: #1f2647;
+            --app-text: #e8ebff;
+            --app-muted: #a8b0d8;
+            --app-border: #323b63;
+            --app-striped: #151b36;
+            --app-hover: #24305b;
+            --app-accent: #8b95e5;
+            --app-accent-rgb: 139, 149, 229;
+            --app-accent-2: #9fd15b;
+            --app-accent-2-rgb: 159, 209, 91;
+            --app-button-solid: #88be4a;
+            --app-button-solid-hover: #79ab42;
+            --app-accent-contrast: #ffffff;
+            --app-gradient: linear-gradient(120deg, #8b95e5 0%, #9fd15b 100%);
+            --app-navbar-bg: rgba(12, 15, 32, 0.9);
+            --app-bg-image:
+                radial-gradient(72rem 44rem at -8% -18%, rgba(139, 149, 229, 0.18), transparent 58%),
+                radial-gradient(56rem 30rem at 110% -10%, rgba(159, 209, 91, 0.16), transparent 55%),
+                linear-gradient(180deg, #0f1226 0%, #131938 100%);
+            --app-card-shadow: 0 12px 30px rgba(0, 0, 0, 0.42);
+
+            --bs-link-color: #b6c0ff;
+            --bs-link-hover-color: #d7ddff;
+            --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28226, 232, 240, 0.88%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        body {
+            background-color: var(--app-bg);
+            background-image: var(--app-bg-image);
+            background-attachment: fixed;
+            color: var(--app-text);
+            font-family: "Sora", "Segoe UI", sans-serif;
+        }
+
+        h1,
+        h2,
+        h3,
+        .navbar-brand {
+            font-family: "Space Grotesk", "Sora", "Segoe UI", sans-serif;
+        }
+
+        h1 {
+            letter-spacing: -0.02em;
+            font-weight: 700;
+        }
+
+        .navbar {
+            background-color: var(--app-navbar-bg);
+            backdrop-filter: blur(12px);
+            border-color: var(--app-border);
+            border-top: 0;
+            border-radius: 1rem;
+            margin: 0 0.75rem;
+            box-shadow: var(--app-card-shadow);
+        }
+
+        .navbar .nav-link,
+        .navbar .navbar-brand,
+        .navbar .navbar-text {
+            color: var(--app-text);
+        }
+
+        .navbar .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .navbar .nav-link {
+            border-radius: 999px;
+            padding: 0.35rem 0.85rem !important;
+            transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+        }
+
+        .navbar .nav-link:hover {
+            background-color: var(--app-surface-soft);
+            transform: translateY(-1px);
+        }
+
+        .navbar .nav-link.active {
+            font-weight: 600;
+            color: #ffffff;
+            background: var(--app-gradient);
+            box-shadow: 0 6px 14px rgba(var(--app-accent-rgb), 0.35);
+        }
+
+        .app-logo-badge {
+            padding: 0.25rem;
+            border-radius: 0.9rem;
+            background: linear-gradient(
+                135deg,
+                rgba(var(--app-accent-rgb), 0.16),
+                rgba(var(--app-accent-2-rgb), 0.28)
+            );
+            border: 1px solid rgba(var(--app-accent-rgb), 0.24);
+            box-shadow: 0 8px 18px rgba(var(--app-accent-rgb), 0.26);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .app-logo-badge:hover {
+            transform: translateY(-1px) scale(1.01);
+            box-shadow: 0 10px 22px rgba(var(--app-accent-rgb), 0.32);
+        }
+
+        .app-logo-image {
+            display: block;
+            height: clamp(48px, 5vw, 64px);
+            width: auto;
+            border-radius: 0.65rem;
+            background-color: #ffffff;
+        }
+
+        .text-muted,
+        .form-text {
+            color: var(--app-muted) !important;
+        }
+
+        .card,
+        .modal-content,
+        .table-responsive {
+            background-color: var(--app-surface);
+            border-color: var(--app-border);
+            box-shadow: var(--app-card-shadow);
+        }
+
+        .card,
+        .modal-content,
+        .table-responsive {
+            border-radius: 0.9rem;
+        }
+
+        .form-control,
+        .form-select {
+            background-color: var(--app-surface);
+            border-color: var(--app-border);
+            color: var(--app-text);
+            border-radius: 0.7rem;
+        }
+
+        .form-control::placeholder {
+            color: var(--app-muted);
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--app-accent);
+            box-shadow: 0 0 0 0.2rem rgba(var(--app-accent-rgb), 0.22);
+        }
+
+        .btn {
+            border-radius: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            transition: transform 0.14s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background-color: var(--app-button-solid);
+            border-color: var(--app-button-solid);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background-color: var(--app-button-solid-hover);
+            border-color: var(--app-button-solid-hover);
+            color: #ffffff;
+            box-shadow: 0 8px 16px rgba(var(--app-accent-2-rgb), 0.34);
+        }
+
+        .btn-success {
+            background-color: var(--app-button-solid);
+            border-color: var(--app-button-solid);
+            color: #ffffff;
+        }
+
+        .btn-success:hover,
+        .btn-success:focus {
+            background-color: var(--app-button-solid-hover);
+            border-color: var(--app-button-solid-hover);
+            color: #ffffff;
+            box-shadow: 0 8px 16px rgba(var(--app-accent-2-rgb), 0.34);
+        }
+
+        .btn-secondary {
+            background-color: var(--app-surface-soft);
+            border-color: var(--app-border);
+            color: var(--app-text);
+        }
+
+        .btn-secondary:hover,
+        .btn-secondary:focus {
+            background-color: var(--app-striped);
+            border-color: var(--app-border);
+            color: var(--app-text);
+        }
+
+        .btn-outline-secondary {
+            color: var(--app-text);
+            border-color: var(--app-border);
+        }
+
+        .btn-outline-secondary:hover,
+        .btn-outline-secondary:focus {
+            color: var(--app-text);
+            background-color: var(--app-surface-soft);
+            border-color: var(--app-border);
+        }
+
+        .table {
+            color: var(--app-text);
+            border-color: var(--app-border);
+            margin-bottom: 0;
+            --bs-table-color: var(--app-text);
+            --bs-table-bg: var(--app-surface);
+            --bs-table-border-color: var(--app-border);
+            --bs-table-striped-color: var(--app-text);
+            --bs-table-striped-bg: var(--app-striped);
+        }
+
+        .table > :not(caption) > * > * {
+            background-color: var(--app-surface);
+            border-color: var(--app-border);
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .table-striped > tbody > tr:nth-of-type(odd) > * {
+            background-color: var(--app-striped);
+        }
+
+        .table thead th {
+            color: var(--app-muted);
+            text-transform: uppercase;
+            font-size: 0.76rem;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            background-color: var(--app-surface-soft);
+        }
+
+        .app-container {
+            margin-top: 1.5rem;
+        }
+
+        .table-responsive {
+            border: 1px solid var(--app-border);
+        }
+
+        .pagination {
+            --bs-pagination-color: var(--app-text);
+            --bs-pagination-bg: var(--app-surface);
+            --bs-pagination-border-color: var(--app-border);
+            --bs-pagination-hover-color: var(--app-text);
+            --bs-pagination-hover-bg: var(--app-striped);
+            --bs-pagination-hover-border-color: var(--app-border);
+            --bs-pagination-focus-color: var(--app-text);
+            --bs-pagination-focus-bg: var(--app-striped);
+            --bs-pagination-focus-box-shadow: none;
+            --bs-pagination-active-color: var(--app-accent-contrast);
+            --bs-pagination-active-bg: var(--app-accent);
+            --bs-pagination-active-border-color: var(--app-accent);
+            --bs-pagination-disabled-color: var(--app-muted);
+            --bs-pagination-disabled-bg: var(--app-surface);
+            --bs-pagination-disabled-border-color: var(--app-border);
+        }
+
+        .alert {
+            border-radius: 0.8rem;
+        }
+
+        .app-alert {
+            border-left: 4px solid currentColor;
+            box-shadow: var(--app-card-shadow);
+        }
+
+        .favorite-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .favorite-star {
+            font-size: 1.55rem;
+            color: var(--app-muted);
+            display: inline-block;
+            transition: transform 0.15s ease, color 0.15s ease, text-shadow 0.15s ease;
+        }
+
+        .favorite-btn:hover .favorite-star,
+        .favorite-star:hover {
+            transform: scale(1.12);
+        }
+
+        .favorite-star.is-on {
+            color: var(--app-accent-2);
+            text-shadow: 0 0 12px rgba(var(--app-accent-2-rgb), 0.34);
+        }
+
+        .favorite-star.is-off {
+            color: var(--app-muted);
+        }
+
+        canvas {
+            color: var(--app-text) !important;
+        }
+
+        @media (max-width: 991.98px) {
+            .navbar {
+                margin: 0;
+                border-radius: 0;
+                border-left: 0;
+                border-right: 0;
+            }
+
+            .app-logo-image {
+                height: 44px;
+            }
+        }
+    </style>
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+<nav class="navbar navbar-expand-lg border-bottom">
+    <div class="container-fluid px-3 px-md-4">
+        <a class="navbar-brand" href="{{ url_for('index') }}">Filament Logs</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#appNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="appNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">Inventory</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'log_filament' %}active{% endif %}" href="{{ url_for('log_filament') }}">Log Usage</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'new_roll' %}active{% endif %}" href="{{ url_for('new_roll') }}">Add Roll</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'popular_filaments' %}active{% endif %}" href="{{ url_for('popular_filaments') }}">Popular</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'low_empty_filaments' %}active{% endif %}" href="{{ url_for('low_empty_filaments') }}">Low</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'empty_rolls' %}active{% endif %}" href="{{ url_for('empty_rolls') }}">Empty</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'favorites' %}active{% endif %}" href="{{ url_for('favorites') }}">Favorites</a></li>
+            </ul>
+            <div class="d-flex align-items-center gap-2">
+                <span class="navbar-text small">{{ app_settings.theme|capitalize }} mode</span>
+                <a href="{{ url_for('settings') }}" class="btn btn-outline-secondary btn-sm {% if request.endpoint == 'settings' %}active{% endif %}">Settings</a>
+                <div class="app-logo-badge">
+                    <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="MakerCampus logo" class="app-logo-image">
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container app-container pb-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          {% set mapped = 'danger' if category == 'error' else category %}
+          {% set show_alert = true %}
+          {% if app_settings.alert_mode == 'silent' %}
+            {% set show_alert = false %}
+          {% elif app_settings.alert_mode == 'errors_only' and mapped != 'danger' %}
+            {% set show_alert = false %}
+          {% endif %}
+
+          {% if show_alert %}
+          <div class="alert alert-{{ mapped if mapped in ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark'] else 'info' }} alert-dismissible fade show app-alert" role="alert" data-level="{{ mapped }}">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+window.APP_SETTINGS = {{ app_settings|default({}, true)|tojson|safe }};
+
+function applyChartThemeDefaults() {
+    const chartTextColor = getComputedStyle(document.documentElement).getPropertyValue("--app-text").trim();
+    const chartGridColor = getComputedStyle(document.documentElement).getPropertyValue("--app-border").trim();
+
+    if (!window.Chart || !window.Chart.defaults) {
+        return false;
+    }
+
+    window.Chart.defaults.color = chartTextColor || "#111827";
+    window.Chart.defaults.borderColor = chartGridColor || "#d1d5db";
+
+    if (window.Chart.defaults.plugins && window.Chart.defaults.plugins.legend) {
+        if (!window.Chart.defaults.plugins.legend.labels) {
+            window.Chart.defaults.plugins.legend.labels = {};
+        }
+        window.Chart.defaults.plugins.legend.labels.color = chartTextColor || "#111827";
+    }
+
+    if (window.Chart.instances) {
+        Object.values(window.Chart.instances).forEach((chart) => {
+            try {
+                chart.update();
+            } catch (_) {
+                // no-op
+            }
+        });
+    }
+    return true;
+}
+
+applyChartThemeDefaults();
+window.addEventListener("load", applyChartThemeDefaults);
+
+(function () {
+    const settings = window.APP_SETTINGS || {};
+    if (settings.alert_mode !== "browser") {
+        return;
+    }
+
+    if (!("Notification" in window)) {
+        return;
+    }
+
+    const alerts = Array.from(document.querySelectorAll(".app-alert"));
+    if (!alerts.length) {
+        return;
+    }
+
+    const notify = () => {
+        alerts.forEach((alertEl) => {
+            const level = alertEl.dataset.level || "info";
+            const body = alertEl.textContent.trim();
+            if (!body) {
+                return;
+            }
+            try {
+                new Notification(`Filament Logs: ${level}`, { body });
+            } catch (_) {
+                // no-op
+            }
+        });
+    };
+
+    if (Notification.permission === "granted") {
+        notify();
+        return;
+    }
+
+    if (Notification.permission === "default") {
+        Notification.requestPermission()
+            .then((permission) => {
+                if (permission === "granted") {
+                    notify();
+                }
+            })
+            .catch(() => {
+                // no-op
+            });
+    }
+})();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

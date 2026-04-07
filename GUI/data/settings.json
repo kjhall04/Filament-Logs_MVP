@@ -1,0 +1,20 @@
+{
+  "theme": "light",
+  "alert_mode": "all",
+  "rows_per_page": 10,
+  "default_location": "Lab",
+  "popular_weeks": 4,
+  "filament_amount_g": 1000.0,
+  "low_threshold_g": 250.0,
+  "empty_threshold_g": 5.0,
+  "default_roll_condition": "new",
+  "used_roll_map_fallback_level": "material",
+  "used_roll_map_min_samples": 1,
+  "scale_timeout_sec": 5,
+  "scale_retry_count": 2,
+  "auto_read_scale_on_weight_step": false,
+  "negative_filament_policy": "block",
+  "auto_backup_on_write": false,
+  "backup_retention_days": 30,
+  "low_stock_alerts": false
+}

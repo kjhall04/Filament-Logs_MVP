@@ -1,0 +1,85 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Popular Filaments | Filament Logs{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Most Popular Filaments</h1>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
+</div>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-sm-6 col-md-4 col-lg-3">
+        <label for="weeks" class="form-label">Time Window</label>
+        <select id="weeks" name="weeks" class="form-select" onchange="this.form.submit()">
+            <option value="all" {% if selected_weeks == 'all' %}selected{% endif %}>All Time</option>
+            <option value="1" {% if selected_weeks == '1' %}selected{% endif %}>Last 1 Week</option>
+            <option value="4" {% if selected_weeks == '4' %}selected{% endif %}>Last 4 Weeks</option>
+            <option value="8" {% if selected_weeks == '8' %}selected{% endif %}>Last 8 Weeks</option>
+            <option value="12" {% if selected_weeks == '12' %}selected{% endif %}>Last 12 Weeks</option>
+        </select>
+    </div>
+    <div class="col-sm-6 col-md-8 col-lg-5 ms-lg-auto">
+        <label for="searchInput" class="form-label">Search</label>
+        <input id="searchInput" type="text" class="form-control" placeholder="Search...">
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-striped" id="popularTable">
+        <thead>
+            <tr>
+                <th style="width:40px;"></th>
+                <th>Brand</th>
+                <th>Color</th>
+                <th>Material</th>
+                <th>Attribute 1</th>
+                <th>Attribute 2</th>
+                <th>Amount (g)</th>
+                <th>Times Logged Out</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for filament in filaments %}
+            <tr data-favorite="{{ 'true' if filament.is_favorite and filament.is_favorite|lower == 'true' else 'false' }}">
+                <td class="text-center align-middle">
+                    {% if filament.is_favorite and filament.is_favorite|lower == 'true' %}
+                    <span class="favorite-star is-on">&#9733;</span>
+                    {% endif %}
+                </td>
+                <td>{{ filament.brand if filament.brand is not none else '' }}</td>
+                <td>{{ filament.color if filament.color is not none else '' }}</td>
+                <td>{{ filament.material if filament.material is not none else '' }}</td>
+                <td>{{ filament.attribute_1 if filament.attribute_1 is not none else '' }}</td>
+                <td>{{ filament.attribute_2 if filament.attribute_2 is not none else '' }}</td>
+                <td>{{ filament.weight if filament.weight is not none else '0' }}</td>
+                <td>{{ filament.times_logged_out if filament.times_logged_out is not none else '0' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById("searchInput").addEventListener("input", function () {
+    const filter = this.value.trim().toLowerCase();
+    const rows = document.querySelectorAll("#popularTable tbody tr");
+
+    rows.forEach((row) => {
+        let match = false;
+        if (filter === "favorite") {
+            match = row.dataset.favorite === "true";
+        } else {
+            row.querySelectorAll("td").forEach((cell) => {
+                if (cell.textContent.toLowerCase().includes(filter)) {
+                    match = true;
+                }
+            });
+        }
+        row.style.display = match ? "" : "none";
+    });
+});
+</script>
+{% endblock %}
