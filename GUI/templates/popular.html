@@ -1,63 +1,241 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Popular Filaments | Filament Logs{% endblock %}
 
+{% block head_extra %}
+<style>
+    .popular-stat-grid {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .popular-stat-card {
+        border: 1px solid var(--app-border);
+        border-radius: 0.9rem;
+        background: linear-gradient(
+            180deg,
+            rgba(var(--app-accent-rgb), 0.04),
+            rgba(var(--app-accent-2-rgb), 0.03)
+        );
+        padding: 0.95rem 1rem;
+    }
+
+    .popular-stat-label {
+        margin: 0 0 0.2rem;
+        color: var(--app-muted);
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+
+    .popular-stat-value {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .popular-result-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.7rem;
+        border-radius: 999px;
+        border: 1px solid var(--app-border);
+        background: var(--app-surface-soft);
+        color: var(--app-text);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Most Popular Filaments</h1>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
-</div>
+{% if selected_weeks == 'all' %}
+{% set scope_label = 'All time' %}
+{% elif selected_weeks == '1' %}
+{% set scope_label = 'Last 1 week' %}
+{% else %}
+{% set scope_label = 'Last ' ~ selected_weeks ~ ' weeks' %}
+{% endif %}
 
-<form method="get" class="row g-2 align-items-end mb-3">
-    <div class="col-sm-6 col-md-4 col-lg-3">
-        <label for="weeks" class="form-label">Time Window</label>
-        <select id="weeks" name="weeks" class="form-select" onchange="this.form.submit()">
-            <option value="all" {% if selected_weeks == 'all' %}selected{% endif %}>All Time</option>
-            <option value="1" {% if selected_weeks == '1' %}selected{% endif %}>Last 1 Week</option>
-            <option value="4" {% if selected_weeks == '4' %}selected{% endif %}>Last 4 Weeks</option>
-            <option value="8" {% if selected_weeks == '8' %}selected{% endif %}>Last 8 Weeks</option>
-            <option value="12" {% if selected_weeks == '12' %}selected{% endif %}>Last 12 Weeks</option>
-        </select>
-    </div>
-    <div class="col-sm-6 col-md-8 col-lg-5 ms-lg-auto">
-        <label for="searchInput" class="form-label">Search</label>
-        <input id="searchInput" type="text" class="form-control" placeholder="Search...">
-    </div>
-</form>
+{% if group_by == 'rolls' %}
+{% set group_label = 'Individual Roll' %}
+{% elif group_by == 'brand' %}
+{% set group_label = 'Brand' %}
+{% elif group_by == 'color' %}
+{% set group_label = 'Color' %}
+{% else %}
+{% set group_label = 'Brand + Color' %}
+{% endif %}
 
-<div class="table-responsive">
-    <table class="table table-striped" id="popularTable">
-        <thead>
-            <tr>
-                <th style="width:40px;"></th>
-                <th>Brand</th>
-                <th>Color</th>
-                <th>Material</th>
-                <th>Attribute 1</th>
-                <th>Attribute 2</th>
-                <th>Amount (g)</th>
-                <th>Times Logged Out</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for filament in filaments %}
-            <tr data-favorite="{{ 'true' if filament.is_favorite and filament.is_favorite|lower == 'true' else 'false' }}">
-                <td class="text-center align-middle">
-                    {% if filament.is_favorite and filament.is_favorite|lower == 'true' %}
-                    <span class="favorite-star is-on">&#9733;</span>
+{% set result_count = filaments|length if group_by == 'rolls' else grouped|length %}
+
+<div class="app-page">
+    <div class="app-page-header">
+        <div>
+            <h1 class="app-page-title">Most Popular Filaments</h1>
+            <p class="app-page-meta app-page-subtitle">
+                Scope: {{ scope_label }} | Grouped by: {{ group_label }} | Results: {{ result_count }}
+            </p>
+        </div>
+    </div>
+
+    <div class="popular-stat-grid">
+        <section class="popular-stat-card">
+            <p class="popular-stat-label">Time Window</p>
+            <p class="popular-stat-value">{{ scope_label }}</p>
+        </section>
+        <section class="popular-stat-card">
+            <p class="popular-stat-label">Grouping</p>
+            <p class="popular-stat-value">{{ group_label }}</p>
+        </section>
+        <section class="popular-stat-card">
+            <p class="popular-stat-label">Rows Returned</p>
+            <p class="popular-stat-value">{{ result_count }}</p>
+        </section>
+        <section class="popular-stat-card">
+            <p class="popular-stat-label">Search Hint</p>
+            <p class="popular-stat-value" style="font-size: 0.98rem;">
+                {% if group_by == 'rolls' %}Try "favorite" or a color name{% else %}Filter brand, color, or totals{% endif %}
+            </p>
+        </section>
+    </div>
+
+    <section class="app-page-panel">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+            <div>
+                <h2 class="h5 mb-1">Filters</h2>
+                <p class="app-page-meta mb-0">Change the popularity window, grouping mode, or text search.</p>
+            </div>
+        </div>
+
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-sm-6 col-md-4 col-lg-3">
+                <label for="weeks" class="form-label">Time Window</label>
+                <select id="weeks" name="weeks" class="form-select" onchange="this.form.submit()">
+                    <option value="all" {% if selected_weeks == 'all' %}selected{% endif %}>All Time</option>
+                    <option value="1" {% if selected_weeks == '1' %}selected{% endif %}>Last 1 Week</option>
+                    <option value="4" {% if selected_weeks == '4' %}selected{% endif %}>Last 4 Weeks</option>
+                    <option value="8" {% if selected_weeks == '8' %}selected{% endif %}>Last 8 Weeks</option>
+                    <option value="12" {% if selected_weeks == '12' %}selected{% endif %}>Last 12 Weeks</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-md-4 col-lg-3">
+                <label for="group_by" class="form-label">Group By</label>
+                <select id="group_by" name="group_by" class="form-select" onchange="this.form.submit()">
+                    <option value="rolls" {% if group_by == 'rolls' %}selected{% endif %}>Individual Roll</option>
+                    <option value="brand" {% if group_by == 'brand' %}selected{% endif %}>Brand</option>
+                    <option value="color" {% if group_by == 'color' %}selected{% endif %}>Color</option>
+                    <option value="brand_color" {% if group_by == 'brand_color' %}selected{% endif %}>Brand + Color</option>
+                </select>
+            </div>
+            <div class="col-sm-12 col-md-8 col-lg-5 ms-lg-auto">
+                <label for="searchInput" class="form-label">Search</label>
+                <input
+                    id="searchInput"
+                    type="text"
+                    class="form-control"
+                    placeholder="{% if group_by == 'rolls' %}Search... (type 'favorite' for starred){% else %}Search grouped results...{% endif %}"
+                >
+            </div>
+        </form>
+    </section>
+
+    <section class="app-page-panel">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+            <div>
+                <h2 class="h5 mb-1">Top Results</h2>
+                <p class="app-page-meta mb-0">
+                    {% if group_by == 'rolls' %}
+                    Ranked by times logged out for individual rolls.
+                    {% else %}
+                    Ranked by usage events and filament consumed for grouped categories.
                     {% endif %}
-                </td>
-                <td>{{ filament.brand if filament.brand is not none else '' }}</td>
-                <td>{{ filament.color if filament.color is not none else '' }}</td>
-                <td>{{ filament.material if filament.material is not none else '' }}</td>
-                <td>{{ filament.attribute_1 if filament.attribute_1 is not none else '' }}</td>
-                <td>{{ filament.attribute_2 if filament.attribute_2 is not none else '' }}</td>
-                <td>{{ filament.weight if filament.weight is not none else '0' }}</td>
-                <td>{{ filament.times_logged_out if filament.times_logged_out is not none else '0' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </p>
+            </div>
+            <span class="popular-result-pill">
+                {{ result_count }} result{% if result_count != 1 %}s{% endif %}
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped" id="popularTable">
+                {% if group_by == 'rolls' %}
+                    <thead>
+                        <tr>
+                            <th style="width:40px;"></th>
+                            <th>Brand</th>
+                            <th>Color</th>
+                            <th>Material</th>
+                            <th>Attribute 1</th>
+                            <th>Attribute 2</th>
+                            <th>Amount (g)</th>
+                            <th>Times Logged Out</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for filament in filaments %}
+                        <tr data-favorite="{{ 'true' if filament.is_favorite and filament.is_favorite|lower == 'true' else 'false' }}">
+                            <td class="text-center align-middle">
+                                {% if filament.is_favorite and filament.is_favorite|lower == 'true' %}
+                                <span class="favorite-star is-on">&#9733;</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ filament.brand if filament.brand is not none else '' }}</td>
+                            <td>{{ filament.color if filament.color is not none else '' }}</td>
+                            <td>{{ filament.material if filament.material is not none else '' }}</td>
+                            <td>{{ filament.attribute_1 if filament.attribute_1 is not none else '' }}</td>
+                            <td>{{ filament.attribute_2 if filament.attribute_2 is not none else '' }}</td>
+                            <td>{{ filament.weight if filament.weight is not none else '0' }}</td>
+                            <td>{{ filament.times_logged_out if filament.times_logged_out is not none else '0' }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not filaments %}
+                        <tr>
+                            <td colspan="8" class="text-muted">No popularity data found for this window.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                {% else %}
+                    <thead>
+                        <tr>
+                            {% if group_by != 'color' %}
+                            <th>Brand</th>
+                            {% endif %}
+                            {% if group_by != 'brand' %}
+                            <th>Color</th>
+                            {% endif %}
+                            <th>Usage Events</th>
+                            <th>Filament Used (g)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in grouped %}
+                        <tr>
+                            {% if group_by != 'color' %}
+                            <td>{{ row.brand }}</td>
+                            {% endif %}
+                            {% if group_by != 'brand' %}
+                            <td>{{ row.color }}</td>
+                            {% endif %}
+                            <td>{{ row.usage_count }}</td>
+                            <td>{{ "%.2f"|format(row.used_g) }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not grouped %}
+                        <tr>
+                            <td colspan="{{ 4 if group_by == 'brand_color' else 3 }}" class="text-muted">
+                                No grouped popularity data found for this window.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                {% endif %}
+            </table>
+        </div>
+    </section>
 </div>
 {% endblock %}
 

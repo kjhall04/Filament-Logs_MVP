@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from backend.config import EMPTY_THRESHOLD, LOW_THRESHOLD
-from backend.workbook_store import list_inventory_rows, open_database
+from backend.workbook_store import list_inventory_rows, normalize_text_case, open_database
 
 
 def _parse_timestamp(value):
@@ -34,6 +34,11 @@ def _to_int(value, default=0):
         return int(float(value))
     except (TypeError, ValueError):
         return default
+
+
+def _normalize_label(value, field=None, fallback="Unknown"):
+    text = normalize_text_case(value, field=field)
+    return text if text else fallback
 
 
 def _inventory_records():
@@ -89,6 +94,41 @@ def _usage_counts_since(cutoff):
     return counts
 
 
+def _usage_cutoff_timestamp(weeks):
+    if weeks is None:
+        return None
+    return (datetime.now() - timedelta(weeks=weeks)).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _list_log_usage_events(weeks=None):
+    cutoff_text = _usage_cutoff_timestamp(weeks)
+    query = [
+        """
+        SELECT
+            timestamp,
+            barcode,
+            brand,
+            color,
+            material,
+            attribute_1,
+            attribute_2,
+            delta_used
+        FROM usage_events
+        WHERE LOWER(COALESCE(event_type, '')) = 'log_usage'
+        """
+    ]
+    params = []
+
+    if cutoff_text is not None:
+        query.append("AND timestamp >= ?")
+        params.append(cutoff_text)
+
+    with open_database(write=False) as conn:
+        rows = conn.execute("\n".join(query), tuple(params)).fetchall()
+
+    return rows
+
+
 def get_most_popular_filaments(top_n: int = 10, weeks: int | None = None):
     records = _inventory_records()
 
@@ -128,6 +168,58 @@ def get_most_popular_filaments(top_n: int = 10, weeks: int | None = None):
         }
         for item in records[:top_n]
     ]
+
+
+def get_most_popular_groups(
+    top_n: int = 10,
+    weeks: int | None = None,
+    group_by: str = "brand_color",
+):
+    normalized_group = str(group_by or "brand_color").strip().lower()
+    if normalized_group not in ("brand", "color", "brand_color"):
+        normalized_group = "brand_color"
+
+    grouped = {}
+    for row in _list_log_usage_events(weeks=weeks):
+        used_g = _to_float(row["delta_used"], 0.0)
+        if used_g <= 0:
+            continue
+
+        brand = _normalize_label(row["brand"], field="brand")
+        color = _normalize_label(row["color"], field="color")
+
+        if normalized_group == "brand":
+            key = (brand,)
+        elif normalized_group == "color":
+            key = (color,)
+        else:
+            key = (brand, color)
+
+        bucket = grouped.setdefault(
+            key,
+            {
+                "brand": brand,
+                "color": color,
+                "usage_count": 0,
+                "used_g": 0.0,
+            },
+        )
+        bucket["usage_count"] += 1
+        bucket["used_g"] += used_g
+
+    rows = []
+    for bucket in grouped.values():
+        rows.append(
+            {
+                "brand": bucket["brand"],
+                "color": bucket["color"],
+                "usage_count": int(bucket["usage_count"]),
+                "used_g": round(bucket["used_g"], 2),
+            }
+        )
+
+    rows.sort(key=lambda item: (-item["usage_count"], -item["used_g"], item["brand"], item["color"]))
+    return rows[:top_n]
 
 
 def get_low_or_empty_filaments(

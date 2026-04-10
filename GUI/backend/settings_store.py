@@ -35,6 +35,8 @@ DEFAULT_SETTINGS = {
     "auto_backup_on_write": False,
     "backup_retention_days": 30,
     "low_stock_alerts": True,
+    "onboarding_completed": False,
+    "onboarding_completed_at": "",
 }
 
 
@@ -157,6 +159,14 @@ def sanitize_settings(raw):
         settings.get("low_stock_alerts", DEFAULT_SETTINGS["low_stock_alerts"]),
         DEFAULT_SETTINGS["low_stock_alerts"],
     )
+
+    settings["onboarding_completed"] = _to_bool(
+        settings.get("onboarding_completed", DEFAULT_SETTINGS["onboarding_completed"]),
+        DEFAULT_SETTINGS["onboarding_completed"],
+    )
+    settings["onboarding_completed_at"] = str(
+        settings.get("onboarding_completed_at", DEFAULT_SETTINGS["onboarding_completed_at"])
+    ).strip()
 
     return settings
 

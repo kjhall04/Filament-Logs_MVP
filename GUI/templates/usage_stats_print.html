@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usage Report | Filament Logs</title>
+    <style>
+        :root {
+            color-scheme: light;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            margin: 1rem;
+            color: #111827;
+            background: #ffffff;
+        }
+
+        h1, h2, h3 {
+            margin: 0 0 0.65rem;
+            color: #0f172a;
+        }
+
+        p {
+            margin: 0.2rem 0 0.4rem;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+        }
+
+        .toolbar button,
+        .toolbar a {
+            font: inherit;
+            border: 1px solid #94a3b8;
+            background: #f8fafc;
+            color: #0f172a;
+            border-radius: 0.45rem;
+            padding: 0.45rem 0.75rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin: 0.85rem 0 1rem;
+        }
+
+        .summary-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 0.55rem;
+            padding: 0.6rem 0.75rem;
+            background: #f8fafc;
+        }
+
+        .summary-card p:first-child {
+            color: #475569;
+            font-size: 0.9rem;
+        }
+
+        .summary-card p:last-child {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .section {
+            margin-top: 1rem;
+        }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.85rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.45rem;
+            font-size: 0.93rem;
+        }
+
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 0.45rem 0.55rem;
+            text-align: left;
+        }
+
+        th {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .muted {
+            color: #475569;
+        }
+
+        @media print {
+            .toolbar {
+                display: none;
+            }
+
+            body {
+                margin: 0;
+                padding: 0.5in;
+            }
+
+            a {
+                color: #111827;
+                text-decoration: none;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .section-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button type="button" onclick="window.print()">Print / Save as PDF</button>
+        <a href="{{ url_for('usage_stats') }}">Back to Usage Stats</a>
+    </div>
+
+    <h1>Filament Usage Report</h1>
+    <p class="muted">Range: <strong>{{ range_label }}</strong></p>
+    <p class="muted">Generated: {{ generated_at }} | App version: v{{ app_version }}</p>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <p>Total Used</p>
+            <p>{{ "%.2f"|format(stats.total_used_g) }} g</p>
+        </div>
+        <div class="summary-card">
+            <p>Usage Events</p>
+            <p>{{ stats.event_count }}</p>
+        </div>
+        <div class="summary-card">
+            <p>Rolls Touched</p>
+            <p>{{ stats.rolls_touched }}</p>
+        </div>
+        <div class="summary-card">
+            <p>Average per Event</p>
+            <p>{{ "%.2f"|format(stats.average_per_event_g) }} g</p>
+        </div>
+    </div>
+
+    {% if stats.last_event %}
+    <p class="muted">First event: {{ stats.first_event }} | Last event: {{ stats.last_event }}</p>
+    {% endif %}
+
+    <div class="section section-grid">
+        <div>
+            <h2>Usage by Material</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th>Used (g)</th>
+                        <th>Events</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in stats.by_material %}
+                    <tr>
+                        <td>{{ row.material }}</td>
+                        <td>{{ "%.2f"|format(row.used_g) }}</td>
+                        <td>{{ row.event_count }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not stats.by_material %}
+                    <tr>
+                        <td colspan="3" class="muted">No usage events found for this range.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <h2>Usage by Color</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Color</th>
+                        <th>Used (g)</th>
+                        <th>Events</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in stats.by_color %}
+                    <tr>
+                        <td>{{ row.color }}</td>
+                        <td>{{ "%.2f"|format(row.used_g) }}</td>
+                        <td>{{ row.event_count }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not stats.by_color %}
+                    <tr>
+                        <td colspan="3" class="muted">No usage events found for this range.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Daily Usage</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Used (g)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in stats.daily_usage %}
+                <tr>
+                    <td>{{ row.date }}</td>
+                    <td>{{ "%.2f"|format(row.used_g) }}</td>
+                </tr>
+                {% endfor %}
+                {% if not stats.daily_usage %}
+                <tr>
+                    <td colspan="2" class="muted">No daily usage data available for this range.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

@@ -3,44 +3,47 @@
 {% block title %}Log Usage | Filament Logs{% endblock %}
 
 {% block content %}
-<h1 class="mb-3">Log Filament Usage</h1>
-
-<form id="logForm" method="post" autocomplete="off" novalidate>
-    <div class="d-flex gap-2 mb-3">
-        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
-        <button type="submit" class="btn btn-primary">Log Usage</button>
+<div class="app-page">
+    <div class="app-page-header">
+        <h1 class="app-page-title">Log Filament Usage</h1>
+        <div class="app-page-actions">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
+            <button type="submit" form="logForm" class="btn btn-primary">Log Usage</button>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label for="barcode" class="form-label">Barcode</label>
-        <input
-            type="text"
-            class="form-control"
-            id="barcode"
-            name="barcode"
-            value="{{ form_data.barcode if form_data else '' }}"
-            autocomplete="off"
-        >
-        <small class="form-text">Scan or type the barcode for the roll.</small>
-    </div>
-
-    <div class="mb-3">
-        <label for="weight" class="form-label">Current Roll Weight (g)</label>
-        <div class="input-group">
+    <form id="logForm" method="post" autocomplete="off" novalidate class="app-page-panel">
+        <div class="mb-3">
+            <label for="barcode" class="form-label">Barcode</label>
             <input
                 type="text"
                 class="form-control"
-                id="weight"
-                name="weight"
-                value="{{ form_data.weight if form_data else '' }}"
+                id="barcode"
+                name="barcode"
+                value="{{ form_data.barcode if form_data else '' }}"
                 autocomplete="off"
             >
-            <button class="btn btn-outline-secondary" type="button" id="getWeightBtn">Get Weight</button>
+            <small class="form-text">Scan or type the barcode for the roll.</small>
         </div>
-        <small class="form-text">Enter the total measured roll weight from the scale.</small>
-        <div id="scaleStatus" class="form-text"></div>
-    </div>
-</form>
+
+        <div class="mb-3">
+            <label for="weight" class="form-label">Current Roll Weight (g)</label>
+            <div class="input-group">
+                <input
+                    type="text"
+                    class="form-control"
+                    id="weight"
+                    name="weight"
+                    value="{{ form_data.weight if form_data else '' }}"
+                    autocomplete="off"
+                >
+                <button class="btn btn-outline-secondary" type="button" id="getWeightBtn">Get Weight</button>
+            </div>
+            <small class="form-text">Enter the total measured roll weight from the scale.</small>
+            <div id="scaleStatus" class="form-text"></div>
+        </div>
+    </form>
+</div>
 {% endblock %}
 
 {% block scripts %}

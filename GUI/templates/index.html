@@ -1,79 +1,138 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Inventory | Filament Logs{% endblock %}
 
+{% block head_extra %}
+<style>
+    .inventory-empty {
+        border: 1px dashed var(--app-border);
+        border-radius: 0.85rem;
+        background: var(--app-surface-soft);
+        padding: 1rem;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Filament Inventory</h1>
-    <span class="text-muted">Total rolls: {{ total }}</span>
-</div>
+<div class="app-page">
+    <div class="app-page-header">
+        <h1 class="app-page-title">Filament Inventory</h1>
+        <div class="app-page-header-meta">
+            <p class="app-page-meta">Total rolls: {{ total }}</p>
+        </div>
+    </div>
 
-<div class="mb-3">
-    <input type="text" id="searchInput" class="form-control" placeholder="Search inventory... (type 'favorite' to filter starred)">
-</div>
+    <section class="app-page-panel">
+        <div class="mb-3">
+            <input
+                type="text"
+                id="searchInput"
+                class="form-control"
+                placeholder="Search inventory... (supports color families like 'blue'; type 'favorite' or 'starred')"
+            >
+        </div>
 
-<div class="table-responsive">
-    <table class="table table-striped" id="filamentTable">
-        <thead>
-            <tr>
-                <th style="width: 40px;"></th>
-                <th>Timestamp</th>
-                <th>Barcode</th>
-                <th>Brand</th>
-                <th>Color</th>
-                <th>Material</th>
-                <th>Attribute 1</th>
-                <th>Attribute 2</th>
-                <th>Amount (g)</th>
-                <th>Location</th>
-                <th>Roll Weight (g)</th>
-                <th>Times Logged Out</th>
-                <th>Is Empty</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for filament in filaments %}
-            {% set is_favorite = filament|length > 12 and filament[12]|string|lower == 'true' %}
-            <tr data-favorite="{{ 'true' if is_favorite else 'false' }}">
-                <td>
-                    <button class="favorite-btn" type="button" data-barcode="{{ filament[1] }}" aria-label="Toggle favorite for {{ filament[1] }}">
-                        {% if is_favorite %}
-                            <span class="favorite-star is-on">&#9733;</span>
-                        {% else %}
-                            <span class="favorite-star is-off">&#9734;</span>
-                        {% endif %}
-                    </button>
-                </td>
-                <td>{{ filament[0] if filament[0] is not none else '' }}</td>
-                <td>{{ filament[1] if filament[1] is not none else '' }}</td>
-                <td>{{ filament[2] if filament[2] is not none else '' }}</td>
-                <td>{{ filament[3] if filament[3] is not none else '' }}</td>
-                <td>{{ filament[4] if filament[4] is not none else '' }}</td>
-                <td>{{ filament[5] if filament[5] is not none else '' }}</td>
-                <td>{{ filament[6] if filament[6] is not none else '' }}</td>
-                <td>{{ filament[7] if filament[7] is not none else '' }}</td>
-                <td>{{ filament[8] if filament[8] is not none else '' }}</td>
-                <td>{{ filament[9] if filament[9] is not none else '' }}</td>
-                <td>{{ filament[10] if filament[10] is not none else '' }}</td>
-                <td>{{ filament[11] if filament[11] is not none else '' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+        {% if not filaments %}
+        <div class="inventory-empty my-3">
+            <p class="mb-1"><strong>No rolls in inventory yet.</strong></p>
+            <p class="app-page-meta mb-0">
+                Start by adding a roll, then use Log Usage to keep weights current.
+            </p>
+        </div>
+        {% endif %}
 
-<nav aria-label="Page navigation" class="mt-3">
-    <ul class="pagination justify-content-center" id="pagination"></ul>
-</nav>
-<div class="text-center text-muted" id="showingInfo"></div>
+        <div class="table-responsive">
+            <table class="table table-striped" id="filamentTable">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"></th>
+                        <th>Timestamp</th>
+                        <th>Barcode</th>
+                        <th>Brand</th>
+                        <th>Color</th>
+                        <th>Material</th>
+                        <th>Attribute 1</th>
+                        <th>Attribute 2</th>
+                        <th>Amount (g)</th>
+                        <th>Location</th>
+                        <th>Roll Weight (g)</th>
+                        <th>Times Logged Out</th>
+                        <th>Is Empty</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for filament in filaments %}
+                    {% set is_favorite = filament|length > 12 and filament[12]|string|lower == 'true' %}
+                    <tr data-favorite="{{ 'true' if is_favorite else 'false' }}" data-search-row="true">
+                        <td>
+                            <button class="favorite-btn" type="button" data-barcode="{{ filament[1] }}" aria-label="Toggle favorite for {{ filament[1] }}">
+                                {% if is_favorite %}
+                                    <span class="favorite-star is-on">&#9733;</span>
+                                {% else %}
+                                    <span class="favorite-star is-off">&#9734;</span>
+                                {% endif %}
+                            </button>
+                        </td>
+                        <td>{{ filament[0] if filament[0] is not none else '' }}</td>
+                        <td>{{ filament[1] if filament[1] is not none else '' }}</td>
+                        <td>{{ filament[2] if filament[2] is not none else '' }}</td>
+                        <td>{{ filament[3] if filament[3] is not none else '' }}</td>
+                        <td>{{ filament[4] if filament[4] is not none else '' }}</td>
+                        <td>{{ filament[5] if filament[5] is not none else '' }}</td>
+                        <td>{{ filament[6] if filament[6] is not none else '' }}</td>
+                        <td>{{ filament[7] if filament[7] is not none else '' }}</td>
+                        <td>{{ filament[8] if filament[8] is not none else '' }}</td>
+                        <td>{{ filament[9] if filament[9] is not none else '' }}</td>
+                        <td>{{ filament[10] if filament[10] is not none else '' }}</td>
+                        <td>{{ filament[11] if filament[11] is not none else '' }}</td>
+                        <td>
+                            <a href="{{ url_for('edit_roll', barcode=filament[1]) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <nav aria-label="Page navigation" class="mt-3">
+            <ul class="pagination justify-content-center" id="pagination"></ul>
+        </nav>
+        <div class="text-center app-page-meta" id="showingInfo"></div>
+    </section>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-const rows = Array.from(document.querySelectorAll("#filamentTable tbody tr"));
+const rows = Array.from(document.querySelectorAll("#filamentTable tbody tr[data-search-row='true']"));
 const perPage = Math.max(1, Number((window.APP_SETTINGS && window.APP_SETTINGS.rows_per_page) || 20));
+const colorSearchTokens = {{ color_search_tokens|default({}, true)|tojson|safe }};
+const searchInputEl = document.getElementById("searchInput");
 let currentPage = 1;
 let filteredRows = rows;
+
+function normalizeSearchText(value) {
+    return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function buildRowSearchBlob(row) {
+    const cells = Array.from(row.querySelectorAll("td"));
+    const baseText = cells
+        .map((cell) => normalizeSearchText(cell.textContent))
+        .filter(Boolean)
+        .join(" ");
+
+    const colorText = normalizeSearchText(cells[4] ? cells[4].textContent : "");
+    const categoryTokens = Array.isArray(colorSearchTokens[colorText]) ? colorSearchTokens[colorText] : [];
+
+    return `${baseText} ${categoryTokens.join(" ")}`.trim();
+}
+
+rows.forEach((row) => {
+    row.dataset.searchBlob = buildRowSearchBlob(row);
+});
 
 function showPage(page) {
     const totalPages = Math.max(1, Math.ceil(filteredRows.length / perPage));
@@ -97,6 +156,9 @@ function showPage(page) {
 function renderPagination() {
     const totalPages = Math.max(1, Math.ceil(filteredRows.length / perPage));
     const pagination = document.getElementById("pagination");
+    if (!pagination) {
+        return;
+    }
     pagination.innerHTML = "";
 
     const prevDisabled = currentPage === 1 ? "disabled" : "";
@@ -114,26 +176,42 @@ function renderPagination() {
 
 function renderShowingInfo() {
     const info = document.getElementById("showingInfo");
+    if (!info) {
+        return;
+    }
     const start = (currentPage - 1) * perPage + 1;
     const end = Math.min(currentPage * perPage, filteredRows.length);
 
     info.textContent = `Showing ${filteredRows.length === 0 ? 0 : start}-${end} of ${filteredRows.length} entries`;
 }
 
-document.getElementById("searchInput").addEventListener("input", function () {
-    const filter = this.value.trim().toLowerCase();
+function applySearchFilter(rawValue) {
+    const filter = normalizeSearchText(rawValue);
+    const filterTerms = filter.split(" ").filter(Boolean);
+    const requiresFavorite = filterTerms.includes("favorite") || filterTerms.includes("starred");
+    const searchableTerms = filterTerms.filter((term) => term !== "favorite" && term !== "starred");
+
     filteredRows = rows.filter((row) => {
-        if (filter === "favorite") {
-            return row.dataset.favorite === "true";
+        if (requiresFavorite && row.dataset.favorite !== "true") {
+            return false;
         }
 
-        return Array.from(row.querySelectorAll("td")).some((cell) =>
-            cell.textContent.toLowerCase().includes(filter)
-        );
+        if (!searchableTerms.length) {
+            return true;
+        }
+
+        const searchBlob = row.dataset.searchBlob || "";
+        return searchableTerms.every((term) => searchBlob.includes(term));
     });
 
     showPage(1);
-});
+}
+
+if (searchInputEl) {
+    searchInputEl.addEventListener("input", function () {
+        applySearchFilter(this.value);
+    });
+}
 
 document.querySelectorAll(".favorite-btn").forEach((button) => {
     button.addEventListener("click", async function (event) {

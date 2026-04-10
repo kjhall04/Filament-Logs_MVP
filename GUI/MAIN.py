@@ -1,12 +1,28 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 
-from backend import data_manipulation, generate_barcode, log_data, settings_store, spreadsheet_stats
+from backend import (
+    app_release,
+    color_search,
+    data_manipulation,
+    generate_barcode,
+    log_data,
+    order_links,
+    settings_store,
+    spreadsheet_stats,
+    usage_analytics,
+)
 from backend.config import EMPTY_THRESHOLD, LOW_THRESHOLD
-from backend.workbook_store import list_inventory_rows, toggle_inventory_favorite
+from backend.workbook_store import (
+    get_inventory_roll,
+    list_inventory_rows,
+    toggle_inventory_favorite,
+    update_inventory_roll,
+)
 
 load_dotenv()
 app = Flask(__name__)
@@ -22,7 +38,6 @@ def parse_float(value, field_name):
         return float(text)
     except ValueError as exc:
         raise ValueError(f"{field_name} must be a valid number.") from exc
-
 
 def parse_timestamp(value):
     if value is None:
@@ -40,6 +55,52 @@ def parse_timestamp(value):
         except ValueError:
             continue
     return datetime.min
+
+
+def parse_date(value):
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return datetime.strptime(text, "%Y-%m-%d")
+    except ValueError:
+        return None
+
+
+def parse_optional_float(value, default=None):
+    if value is None:
+        return default
+
+    text = str(value).strip().replace(",", "")
+    if not text:
+        return default
+
+    try:
+        return float(text)
+    except ValueError:
+        return default
+
+
+def timestamp_now_iso():
+    return datetime.now().replace(microsecond=0).isoformat()
+
+
+def normalize_next_path(value):
+    text = str(value or "").strip()
+    if not text:
+        return url_for("index")
+
+    parsed = urlparse(text)
+    if parsed.scheme or parsed.netloc:
+        return url_for("index")
+    if not text.startswith("/"):
+        return url_for("index")
+    if text.startswith("//"):
+        return url_for("index")
+
+    return text
 
 
 def parse_roll_state(value):
@@ -120,13 +181,100 @@ def render_new_roll(step="info", **context):
 def inject_app_settings():
     return {
         "app_settings": settings_store.load_settings(),
+        "app_release": app_release.load_local_release_info(),
     }
+
+
+def should_skip_onboarding_redirect():
+    endpoint = request.endpoint or ""
+    if request.method != "GET":
+        return True
+    if not endpoint:
+        return True
+    if endpoint == "static":
+        return True
+    if endpoint == "welcome":
+        return True
+    if request.path.startswith("/api/"):
+        return True
+    return False
+
+
+@app.before_request
+def enforce_onboarding():
+    if should_skip_onboarding_redirect():
+        return None
+
+    app_settings = settings_store.load_settings()
+    if app_settings.get("onboarding_completed", False):
+        return None
+
+    next_path = request.full_path if request.query_string else request.path
+    next_path = str(next_path).rstrip("?")
+    return redirect(url_for("welcome", next=next_path))
+
+
+@app.route("/welcome", methods=["GET", "POST"])
+def welcome():
+    current = settings_store.load_settings()
+    next_path = normalize_next_path(request.values.get("next", url_for("index")))
+
+    if request.method == "POST":
+        action = str(request.form.get("action", "save")).strip().lower()
+        next_path = normalize_next_path(request.form.get("next", next_path))
+
+        if action == "skip":
+            settings_store.save_settings(
+                {
+                    "onboarding_completed": True,
+                    "onboarding_completed_at": timestamp_now_iso(),
+                }
+            )
+            flash("First-launch setup skipped. You can reopen it from Settings anytime.", "info")
+            return redirect(next_path)
+
+        updates = {
+            "theme": request.form.get("theme", current.get("theme", "light")),
+            "alert_mode": request.form.get("alert_mode", current.get("alert_mode", "all")),
+            "rows_per_page": request.form.get("rows_per_page", current.get("rows_per_page", 20)),
+            "default_location": request.form.get(
+                "default_location", current.get("default_location", "Lab")
+            ),
+            "default_roll_condition": request.form.get(
+                "default_roll_condition", current.get("default_roll_condition", "new")
+            ),
+            "filament_amount_g": request.form.get(
+                "filament_amount_g", current.get("filament_amount_g", 1000.0)
+            ),
+            "low_threshold_g": request.form.get(
+                "low_threshold_g", current.get("low_threshold_g", LOW_THRESHOLD)
+            ),
+            "empty_threshold_g": request.form.get(
+                "empty_threshold_g", current.get("empty_threshold_g", EMPTY_THRESHOLD)
+            ),
+            "popular_weeks": request.form.get("popular_weeks", current.get("popular_weeks", 4)),
+            "onboarding_completed": True,
+            "onboarding_completed_at": timestamp_now_iso(),
+        }
+        settings_store.save_settings(updates)
+        flash("First-launch setup saved.", "success")
+        return redirect(next_path)
+
+    return render_template(
+        "welcome.html",
+        settings=current,
+        next_path=next_path,
+        theme_options=settings_store.THEME_OPTIONS,
+        alert_mode_options=settings_store.ALERT_MODE_OPTIONS,
+        roll_condition_options=settings_store.ROLL_CONDITION_OPTIONS,
+    )
 
 
 @app.route("/")
 def index():
     filaments = get_inventory_rows()
     filaments.sort(key=lambda row: parse_timestamp(row[0] if row else None), reverse=True)
+    color_search_tokens = color_search.get_color_search_tokens_by_color()
 
     favorite_barcodes = [
         row[1]
@@ -139,6 +287,7 @@ def index():
         filaments=filaments,
         total=len(filaments),
         favorite_barcodes=favorite_barcodes,
+        color_search_tokens=color_search_tokens,
     )
 
 
@@ -146,6 +295,9 @@ def index():
 def popular_filaments():
     app_settings = settings_store.load_settings()
     weeks_arg = request.args.get("weeks")
+    group_by = str(request.args.get("group_by", "rolls")).strip().lower()
+    if group_by not in ("rolls", "brand", "color", "brand_color"):
+        group_by = "rolls"
 
     if weeks_arg is None or str(weeks_arg).strip() == "":
         default_weeks = int(app_settings.get("popular_weeks", 4))
@@ -161,28 +313,169 @@ def popular_filaments():
                 parsed = int(app_settings.get("popular_weeks", 4))
             weeks = None if parsed <= 0 else parsed
 
-    popular = spreadsheet_stats.get_most_popular_filaments(top_n=100, weeks=weeks)
     selected_weeks = "all" if weeks is None else str(weeks)
-    return render_template("popular.html", filaments=popular, selected_weeks=selected_weeks)
+    if group_by == "rolls":
+        popular = spreadsheet_stats.get_most_popular_filaments(top_n=200, weeks=weeks)
+        grouped = []
+    else:
+        grouped = spreadsheet_stats.get_most_popular_groups(
+            top_n=200,
+            weeks=weeks,
+            group_by=group_by,
+        )
+        popular = []
+
+    return render_template(
+        "popular.html",
+        filaments=popular,
+        grouped=grouped,
+        selected_weeks=selected_weeks,
+        group_by=group_by,
+    )
+
+
+def resolve_usage_stats_request(args, app_settings, emit_flash=True):
+    default_weeks = parse_int_setting(app_settings.get("popular_weeks"), 4, 0, 104)
+
+    weeks_arg = str(args.get("weeks", "")).strip().lower()
+    start_input = str(args.get("start", "")).strip()
+    end_input = str(args.get("end", "")).strip()
+
+    start_ts = None
+    end_ts = None
+    selected_weeks = "all"
+    range_label = "All time"
+
+    start_dt = parse_date(start_input) if start_input else None
+    end_dt = parse_date(end_input) if end_input else None
+
+    custom_range_requested = bool(start_input or end_input)
+    if custom_range_requested:
+        invalid_date = False
+        if start_input and start_dt is None:
+            if emit_flash:
+                flash("Start date must be in YYYY-MM-DD format.", "error")
+            invalid_date = True
+        if end_input and end_dt is None:
+            if emit_flash:
+                flash("End date must be in YYYY-MM-DD format.", "error")
+            invalid_date = True
+
+        if not invalid_date:
+            range_start = start_dt or end_dt
+            range_end = end_dt or start_dt
+
+            if range_start and range_end and range_start > range_end:
+                range_start, range_end = range_end, range_start
+                start_input = range_start.strftime("%Y-%m-%d")
+                end_input = range_end.strftime("%Y-%m-%d")
+                if emit_flash:
+                    flash(
+                        "Date range was normalized because start date was after end date.",
+                        "warning",
+                    )
+
+            if range_start is not None:
+                start_ts = range_start.strftime("%Y-%m-%d 00:00:00")
+            if range_end is not None:
+                end_ts = range_end.strftime("%Y-%m-%d 23:59:59")
+
+            selected_weeks = "custom"
+            if range_start and range_end and range_start.date() == range_end.date():
+                range_label = range_start.strftime("%Y-%m-%d")
+            else:
+                start_label = range_start.strftime("%Y-%m-%d") if range_start else "Beginning"
+                end_label = range_end.strftime("%Y-%m-%d") if range_end else "Now"
+                range_label = f"{start_label} to {end_label}"
+
+    if selected_weeks != "custom":
+        if not weeks_arg:
+            weeks = None if default_weeks <= 0 else default_weeks
+        elif weeks_arg == "all":
+            weeks = None
+        else:
+            parsed = parse_int_setting(
+                weeks_arg,
+                default_weeks if default_weeks > 0 else 4,
+                0,
+                104,
+            )
+            weeks = None if parsed <= 0 else parsed
+
+        if weeks is None:
+            selected_weeks = "all"
+            range_label = "All time"
+        else:
+            selected_weeks = str(weeks)
+            range_label = f"Last {weeks} week{'s' if weeks != 1 else ''}"
+            start_ts = (datetime.now() - timedelta(weeks=weeks)).strftime("%Y-%m-%d %H:%M:%S")
+
+    stats = usage_analytics.get_usage_summary(start_ts=start_ts, end_ts=end_ts)
+    return {
+        "stats": stats,
+        "selected_weeks": selected_weeks,
+        "start_input": start_input,
+        "end_input": end_input,
+        "range_label": range_label,
+    }
+
+
+@app.route("/usage_stats")
+def usage_stats():
+    app_settings = settings_store.load_settings()
+    context = resolve_usage_stats_request(request.args, app_settings, emit_flash=True)
+    return render_template("usage_stats.html", **context)
+
+
+@app.route("/usage_stats/print")
+def usage_stats_print():
+    app_settings = settings_store.load_settings()
+    context = resolve_usage_stats_request(request.args, app_settings, emit_flash=False)
+    release = app_release.load_local_release_info()
+    return render_template(
+        "usage_stats_print.html",
+        **context,
+        generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        app_version=release.get("version", ""),
+    )
+
+
+def normalize_stock_status_view(value):
+    normalized = str(value or "").strip().lower()
+    return normalized if normalized in ("low", "empty") else "low"
+
+
+@app.route("/stock_status")
+def stock_status():
+    view = normalize_stock_status_view(request.args.get("view"))
+    app_settings = settings_store.load_settings()
+    low_threshold, empty_threshold = get_threshold_settings(app_settings)
+
+    if view == "empty":
+        rows = spreadsheet_stats.get_empty_rolls(empty_threshold=empty_threshold)
+    else:
+        rows = spreadsheet_stats.get_low_or_empty_filaments(
+            low_threshold=low_threshold,
+            empty_threshold=empty_threshold,
+        )
+
+    return render_template(
+        "stock_status.html",
+        view=view,
+        rows=rows,
+        low_threshold=low_threshold,
+        empty_threshold=empty_threshold,
+    )
 
 
 @app.route("/low_empty")
 def low_empty_filaments():
-    app_settings = settings_store.load_settings()
-    low_threshold, empty_threshold = get_threshold_settings(app_settings)
-    low_empty = spreadsheet_stats.get_low_or_empty_filaments(
-        low_threshold=low_threshold,
-        empty_threshold=empty_threshold,
-    )
-    return render_template("low_empty.html", filaments=low_empty)
+    return redirect(url_for("stock_status", view="low"))
 
 
 @app.route("/empty_rolls")
 def empty_rolls():
-    app_settings = settings_store.load_settings()
-    _, empty_threshold = get_threshold_settings(app_settings)
-    empty = spreadsheet_stats.get_empty_rolls(empty_threshold=empty_threshold)
-    return render_template("empty_rolls.html", rolls=empty)
+    return redirect(url_for("stock_status", view="empty"))
 
 
 @app.route("/log", methods=["GET", "POST"])
@@ -248,6 +541,13 @@ def api_scale_weight():
     if weight is None:
         return jsonify({"error": "Scale unavailable"}), 503
     return jsonify({"weight": round(float(weight), 2)})
+
+
+@app.route("/api/update/check")
+def api_update_check():
+    timeout_sec = parse_int_setting(request.args.get("timeout_sec"), 4, 1, 20)
+    status = app_release.check_for_updates(timeout_sec=timeout_sec)
+    return jsonify(status), 200
 
 
 @app.route("/new_roll", methods=["GET", "POST"])
@@ -540,6 +840,170 @@ def new_roll():
     return render_new_roll(step="info")
 
 
+@app.route("/edit_roll/<barcode>", methods=["GET", "POST"])
+def edit_roll(barcode):
+    target_barcode = str(barcode or "").strip()
+    if not target_barcode:
+        flash("Barcode is required for editing.", "error")
+        return redirect(url_for("index"))
+
+    existing = get_inventory_roll(target_barcode)
+    if existing is None:
+        flash("Barcode not found.", "error")
+        return redirect(url_for("index"))
+
+    options = generate_barcode.get_catalog_options()
+    app_settings = settings_store.load_settings()
+    _, empty_threshold = get_threshold_settings(app_settings)
+
+    form_data = {
+        "brand": existing.get("brand", "") or "",
+        "color": existing.get("color", "") or "",
+        "material": existing.get("material", "") or "",
+        "attribute_1": existing.get("attribute_1", "") or "",
+        "attribute_2": existing.get("attribute_2", "") or "",
+        "location": existing.get("location", app_settings.get("default_location", "Lab")) or "Lab",
+        "filament_amount": f"{float(existing.get('filament_amount', 0.0)):.2f}",
+        "roll_weight": (
+            ""
+            if existing.get("roll_weight") is None
+            else f"{float(existing.get('roll_weight', 0.0)):.2f}"
+        ),
+    }
+
+    if request.method == "POST":
+        form_data = {
+            "brand": str(request.form.get("brand", "")).strip(),
+            "color": str(request.form.get("color", "")).strip(),
+            "material": str(request.form.get("material", "")).strip(),
+            "attribute_1": str(request.form.get("attribute_1", "")).strip(),
+            "attribute_2": str(request.form.get("attribute_2", "")).strip(),
+            "location": str(
+                request.form.get("location", app_settings.get("default_location", "Lab"))
+            ).strip(),
+            "filament_amount": str(request.form.get("filament_amount", "")).strip(),
+            "roll_weight": str(request.form.get("roll_weight", "")).strip(),
+        }
+
+        if not form_data["brand"] or not form_data["color"] or not form_data["material"]:
+            flash("Brand, color, and material are required.", "error")
+            return render_template(
+                "edit_roll.html",
+                barcode=target_barcode,
+                form_data=form_data,
+                brand_options=options["brands"],
+                color_options=options["colors"],
+                material_options=options["materials"],
+                attribute_options=options["attributes"],
+                location_options=options["locations"],
+                times_logged_out=existing.get("times_logged_out", 0),
+            )
+
+        try:
+            filament_amount = parse_float(form_data["filament_amount"], "Filament amount")
+        except ValueError as exc:
+            flash(str(exc), "error")
+            return render_template(
+                "edit_roll.html",
+                barcode=target_barcode,
+                form_data=form_data,
+                brand_options=options["brands"],
+                color_options=options["colors"],
+                material_options=options["materials"],
+                attribute_options=options["attributes"],
+                location_options=options["locations"],
+                times_logged_out=existing.get("times_logged_out", 0),
+            )
+
+        roll_weight_value = None
+        if form_data["roll_weight"]:
+            parsed_roll_weight = parse_optional_float(form_data["roll_weight"], default=None)
+            if parsed_roll_weight is None:
+                flash("Roll weight must be a valid number if provided.", "error")
+                return render_template(
+                    "edit_roll.html",
+                    barcode=target_barcode,
+                    form_data=form_data,
+                    brand_options=options["brands"],
+                    color_options=options["colors"],
+                    material_options=options["materials"],
+                    attribute_options=options["attributes"],
+                    location_options=options["locations"],
+                    times_logged_out=existing.get("times_logged_out", 0),
+                )
+            roll_weight_value = parsed_roll_weight
+
+        if filament_amount < 0:
+            flash("Filament amount cannot be negative.", "error")
+            return render_template(
+                "edit_roll.html",
+                barcode=target_barcode,
+                form_data=form_data,
+                brand_options=options["brands"],
+                color_options=options["colors"],
+                material_options=options["materials"],
+                attribute_options=options["attributes"],
+                location_options=options["locations"],
+                times_logged_out=existing.get("times_logged_out", 0),
+            )
+
+        if roll_weight_value is not None and roll_weight_value < 0:
+            flash("Roll weight cannot be negative.", "error")
+            return render_template(
+                "edit_roll.html",
+                barcode=target_barcode,
+                form_data=form_data,
+                brand_options=options["brands"],
+                color_options=options["colors"],
+                material_options=options["materials"],
+                attribute_options=options["attributes"],
+                location_options=options["locations"],
+                times_logged_out=existing.get("times_logged_out", 0),
+            )
+
+        is_empty = filament_amount <= empty_threshold
+        updated = update_inventory_roll(
+            barcode=target_barcode,
+            brand=form_data["brand"],
+            color=form_data["color"],
+            material=form_data["material"],
+            attribute_1=form_data["attribute_1"],
+            attribute_2=form_data["attribute_2"],
+            location=form_data["location"],
+            filament_amount=round(filament_amount, 2),
+            roll_weight=round(roll_weight_value, 2) if roll_weight_value is not None else None,
+            is_empty=is_empty,
+        )
+        if not updated:
+            flash("Failed to update roll data.", "error")
+            return render_template(
+                "edit_roll.html",
+                barcode=target_barcode,
+                form_data=form_data,
+                brand_options=options["brands"],
+                color_options=options["colors"],
+                material_options=options["materials"],
+                attribute_options=options["attributes"],
+                location_options=options["locations"],
+                times_logged_out=existing.get("times_logged_out", 0),
+            )
+
+        flash(f"Roll {target_barcode} updated successfully.", "success")
+        return redirect(url_for("index"))
+
+    return render_template(
+        "edit_roll.html",
+        barcode=target_barcode,
+        form_data=form_data,
+        brand_options=options["brands"],
+        color_options=options["colors"],
+        material_options=options["materials"],
+        attribute_options=options["attributes"],
+        location_options=options["locations"],
+        times_logged_out=existing.get("times_logged_out", 0),
+    )
+
+
 @app.route("/toggle_favorite", methods=["POST"])
 def toggle_favorite():
     payload = request.get_json(silent=True) or {}
@@ -559,6 +1023,7 @@ def favorites():
     rows = get_inventory_rows()
     app_settings = settings_store.load_settings()
     low_threshold, _ = get_threshold_settings(app_settings)
+    color_search_tokens = color_search.get_color_search_tokens_by_color()
 
     def key_norm(value):
         return str(value).strip().lower() if value is not None else ""
@@ -612,8 +1077,13 @@ def favorites():
         if group_key in unique_favorites:
             continue
 
-        query = " ".join([brand, color, material, attr1, attr2, "filament"]).strip()
-        amazon_url = "https://www.amazon.com/s?k=" + "+".join(query.split()) if query else ""
+        order_link = order_links.build_order_link(
+            brand=brand,
+            color=color,
+            material=material,
+            attribute_1=attr1,
+            attribute_2=attr2,
+        )
 
         group_counts = counts.get(group_key, {"total": 0, "low": 0})
 
@@ -623,12 +1093,17 @@ def favorites():
             "material": material,
             "attribute_1": attr1,
             "attribute_2": attr2,
-            "amazon_url": amazon_url,
+            "order_url": order_link.get("url", ""),
+            "order_label": order_link.get("label", "Order"),
             "total_count": group_counts["total"],
             "low_count": group_counts["low"],
         }
 
-    return render_template("favorites.html", favorites=list(unique_favorites.values()))
+    return render_template(
+        "favorites.html",
+        favorites=list(unique_favorites.values()),
+        color_search_tokens=color_search_tokens,
+    )
 
 
 @app.route("/settings", methods=["GET", "POST"])

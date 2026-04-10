@@ -2,8 +2,9 @@ import os
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
+import json
 
-from backend.config import DATABASE_PATH, EXCEL_PATH
+from backend.config import DATABASE_PATH, DATA_DIR, EXCEL_PATH
 
 
 def _to_bool(value, default=False):
@@ -44,52 +45,142 @@ def _normalize_timestamp(value):
     return text or None
 
 
-def normalize_text_case(value):
-    if value is None:
-        return None
+_MAPPING_LOOKUP_CACHE = {}
+_CANONICALIZATION_SCHEMA_VERSION = 1
 
-    text = str(value).strip()
+
+def _normalize_space(value):
+    return " ".join(str(value or "").split()).strip()
+
+
+def _lookup_key(value):
+    return _normalize_space(value).casefold()
+
+
+def _load_mapping(filename):
+    path = os.path.join(DATA_DIR, filename)
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _flatten_color_mapping(color_mapping):
+    flattened = {}
+    if not isinstance(color_mapping, dict):
+        return flattened
+    for key_name, value in color_mapping.items():
+        if isinstance(value, dict):
+            for code, label in value.items():
+                flattened[code] = label
+        else:
+            flattened[key_name] = value
+    return flattened
+
+
+def _mapping_lookup(mapping_name):
+    if mapping_name in _MAPPING_LOOKUP_CACHE:
+        return _MAPPING_LOOKUP_CACHE[mapping_name]
+
+    if mapping_name == "brand":
+        raw = _load_mapping("brand_mapping.json")
+    elif mapping_name == "color":
+        raw = _flatten_color_mapping(_load_mapping("color_mapping.json"))
+    elif mapping_name == "material":
+        raw = _load_mapping("material_mapping.json")
+    elif mapping_name == "attribute":
+        raw = _load_mapping("attribute_mapping.json")
+    else:
+        raw = {}
+
+    lookup = {}
+    for _, label in raw.items():
+        canonical = _normalize_space(label)
+        if not canonical:
+            continue
+        lookup[_lookup_key(canonical)] = canonical
+
+    _MAPPING_LOOKUP_CACHE[mapping_name] = lookup
+    return lookup
+
+
+def _canonicalize_mapped_text(value, mapping_name):
+    text = _normalize_space(value)
     if not text:
         return ""
 
-    return text[0].upper() + text[1:].lower()
+    lookup = _mapping_lookup(mapping_name)
+    canonical = lookup.get(_lookup_key(text))
+    return canonical if canonical is not None else text
 
 
-def _capitalize_sql(value_expr):
-    return (
-        f"CASE "
-        f"WHEN {value_expr} IS NULL THEN NULL "
-        f"WHEN TRIM({value_expr}) = '' THEN '' "
-        f"ELSE UPPER(SUBSTR(TRIM({value_expr}), 1, 1)) || LOWER(SUBSTR(TRIM({value_expr}), 2)) "
-        f"END"
+def normalize_text_case(value, field=None):
+    if value is None:
+        return None
+
+    text = _normalize_space(value)
+    if not text:
+        return ""
+
+    field_key = str(field or "").strip().lower()
+    if field_key == "brand":
+        return _canonicalize_mapped_text(text, "brand")
+    if field_key == "color":
+        return _canonicalize_mapped_text(text, "color")
+    if field_key == "material":
+        return _canonicalize_mapped_text(text, "material")
+    if field_key in ("attribute", "attribute_1", "attribute_2"):
+        return _canonicalize_mapped_text(text, "attribute")
+    if field_key == "location":
+        lowered = text.lower()
+        if lowered == "lab":
+            return "Lab"
+        if lowered == "storage":
+            return "Storage"
+        return text
+
+    return text
+
+
+def _canonicalize_existing_catalog_values(conn):
+    migration_specs = (
+        ("inventory", "brand", "brand"),
+        ("inventory", "color", "color"),
+        ("inventory", "material", "material"),
+        ("inventory", "attribute_1", "attribute"),
+        ("inventory", "attribute_2", "attribute"),
+        ("inventory", "location", "location"),
+        ("usage_events", "brand", "brand"),
+        ("usage_events", "color", "color"),
+        ("usage_events", "material", "material"),
+        ("usage_events", "attribute_1", "attribute"),
+        ("usage_events", "attribute_2", "attribute"),
+        ("usage_events", "location", "location"),
     )
 
+    for table_name, column_name, field_name in migration_specs:
+        rows = conn.execute(
+            f"""
+            SELECT rowid AS __rid, {column_name} AS value
+            FROM {table_name}
+            WHERE {column_name} IS NOT NULL AND TRIM({column_name}) != ''
+            """
+        ).fetchall()
 
-def _normalize_existing_text_case(conn):
-    conn.execute(
-        f"""
-        UPDATE inventory
-        SET
-            brand = {_capitalize_sql("brand")},
-            color = {_capitalize_sql("color")},
-            material = {_capitalize_sql("material")},
-            attribute_1 = {_capitalize_sql("attribute_1")},
-            attribute_2 = {_capitalize_sql("attribute_2")},
-            location = {_capitalize_sql("location")}
-        """
-    )
-    conn.execute(
-        f"""
-        UPDATE usage_events
-        SET
-            brand = {_capitalize_sql("brand")},
-            color = {_capitalize_sql("color")},
-            material = {_capitalize_sql("material")},
-            attribute_1 = {_capitalize_sql("attribute_1")},
-            attribute_2 = {_capitalize_sql("attribute_2")},
-            location = {_capitalize_sql("location")}
-        """
-    )
+        updates = []
+        for row in rows:
+            current = row["value"]
+            canonical = normalize_text_case(current, field=field_name)
+            if canonical != current:
+                updates.append((canonical, row["__rid"]))
+
+        if updates:
+            conn.executemany(
+                f"UPDATE {table_name} SET {column_name} = ? WHERE rowid = ?",
+                updates,
+            )
 
 
 def _ensure_parent_dir(path):
@@ -203,7 +294,12 @@ def _ensure_schema(conn):
         "CREATE INDEX IF NOT EXISTS idx_usage_events_type_time ON usage_events(event_type, timestamp)"
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_events_barcode ON usage_events(barcode)")
-    _normalize_existing_text_case(conn)
+
+    schema_version = conn.execute("PRAGMA user_version").fetchone()[0]
+    if schema_version < _CANONICALIZATION_SCHEMA_VERSION:
+        _canonicalize_existing_catalog_values(conn)
+        conn.execute(f"PRAGMA user_version = {_CANONICALIZATION_SCHEMA_VERSION}")
+
     conn.commit()
 
 
@@ -241,13 +337,13 @@ def _import_inventory_rows(conn, inventory_sheet):
             (
                 _normalize_timestamp(row[0] if len(row) > 0 else None),
                 barcode,
-                normalize_text_case(row[2] if len(row) > 2 else None),
-                normalize_text_case(row[3] if len(row) > 3 else None),
-                normalize_text_case(row[4] if len(row) > 4 else None),
-                normalize_text_case(row[5] if len(row) > 5 else None),
-                normalize_text_case(row[6] if len(row) > 6 else None),
+                normalize_text_case(row[2] if len(row) > 2 else None, field="brand"),
+                normalize_text_case(row[3] if len(row) > 3 else None, field="color"),
+                normalize_text_case(row[4] if len(row) > 4 else None, field="material"),
+                normalize_text_case(row[5] if len(row) > 5 else None, field="attribute_1"),
+                normalize_text_case(row[6] if len(row) > 6 else None, field="attribute_2"),
                 _to_float(row[7] if len(row) > 7 else None, 0.0),
-                normalize_text_case(row[8] if len(row) > 8 else None),
+                normalize_text_case(row[8] if len(row) > 8 else None, field="location"),
                 _to_float(row[9] if len(row) > 9 else None),
                 _to_int(row[10] if len(row) > 10 else None, 0),
                 1 if _to_bool(row[11] if len(row) > 11 else None, False) else 0,
@@ -290,12 +386,12 @@ def _import_event_rows(conn, events_sheet):
                 _normalize_timestamp(row[0] if len(row) > 0 else None),
                 row[1] if len(row) > 1 else None,
                 str(row[2]).strip() if len(row) > 2 and row[2] is not None else None,
-                normalize_text_case(row[3] if len(row) > 3 else None),
-                normalize_text_case(row[4] if len(row) > 4 else None),
-                normalize_text_case(row[5] if len(row) > 5 else None),
-                normalize_text_case(row[6] if len(row) > 6 else None),
-                normalize_text_case(row[7] if len(row) > 7 else None),
-                normalize_text_case(row[8] if len(row) > 8 else None),
+                normalize_text_case(row[3] if len(row) > 3 else None, field="brand"),
+                normalize_text_case(row[4] if len(row) > 4 else None, field="color"),
+                normalize_text_case(row[5] if len(row) > 5 else None, field="material"),
+                normalize_text_case(row[6] if len(row) > 6 else None, field="attribute_1"),
+                normalize_text_case(row[7] if len(row) > 7 else None, field="attribute_2"),
+                normalize_text_case(row[8] if len(row) > 8 else None, field="location"),
                 _to_float(row[9] if len(row) > 9 else None),
                 _to_float(row[10] if len(row) > 10 else None),
                 _to_float(row[11] if len(row) > 11 else None),
@@ -435,18 +531,39 @@ def _inventory_row_to_tuple(row):
     return (
         row["timestamp"],
         row["barcode"],
-        normalize_text_case(row["brand"]),
-        normalize_text_case(row["color"]),
-        normalize_text_case(row["material"]),
-        normalize_text_case(row["attribute_1"]),
-        normalize_text_case(row["attribute_2"]),
+        normalize_text_case(row["brand"], field="brand"),
+        normalize_text_case(row["color"], field="color"),
+        normalize_text_case(row["material"], field="material"),
+        normalize_text_case(row["attribute_1"], field="attribute_1"),
+        normalize_text_case(row["attribute_2"], field="attribute_2"),
         _to_float(row["filament_amount"], 0.0),
-        normalize_text_case(row["location"]),
+        normalize_text_case(row["location"], field="location"),
         _to_float(row["roll_weight"]),
         _to_int(row["times_logged_out"], 0),
         "True" if _to_bool(row["is_empty"], False) else "False",
         "True" if _to_bool(row["is_favorite"], False) else "False",
     )
+
+
+def _inventory_row_to_dict(row):
+    if row is None:
+        return None
+
+    return {
+        "timestamp": row["timestamp"],
+        "barcode": str(row["barcode"]).strip() if row["barcode"] is not None else "",
+        "brand": normalize_text_case(row["brand"], field="brand"),
+        "color": normalize_text_case(row["color"], field="color"),
+        "material": normalize_text_case(row["material"], field="material"),
+        "attribute_1": normalize_text_case(row["attribute_1"], field="attribute_1"),
+        "attribute_2": normalize_text_case(row["attribute_2"], field="attribute_2"),
+        "filament_amount": _to_float(row["filament_amount"], 0.0),
+        "location": normalize_text_case(row["location"], field="location"),
+        "roll_weight": _to_float(row["roll_weight"]),
+        "times_logged_out": _to_int(row["times_logged_out"], 0),
+        "is_empty": _to_bool(row["is_empty"], False),
+        "is_favorite": _to_bool(row["is_favorite"], False),
+    }
 
 
 def list_inventory_rows():
@@ -556,3 +673,127 @@ def toggle_inventory_favorite(barcode: str):
         if row is None:
             return None
         return _to_bool(row["is_favorite"], False)
+
+
+def get_inventory_roll(barcode: str, conn=None):
+    if not barcode:
+        return None
+
+    target = str(barcode).strip()
+    if not target:
+        return None
+
+    query = """
+        SELECT
+            timestamp,
+            barcode,
+            brand,
+            color,
+            material,
+            attribute_1,
+            attribute_2,
+            filament_amount,
+            location,
+            roll_weight,
+            times_logged_out,
+            is_empty,
+            is_favorite
+        FROM inventory
+        WHERE barcode = ?
+        LIMIT 1
+    """
+
+    if conn is not None:
+        row = conn.execute(query, (target,)).fetchone()
+        return _inventory_row_to_dict(row)
+
+    with open_database(write=False) as read_conn:
+        row = read_conn.execute(query, (target,)).fetchone()
+        return _inventory_row_to_dict(row)
+
+
+def update_inventory_roll(
+    barcode: str,
+    brand,
+    color,
+    material,
+    attribute_1,
+    attribute_2,
+    location,
+    filament_amount,
+    roll_weight,
+    is_empty,
+):
+    if not barcode:
+        return False
+
+    target = str(barcode).strip()
+    if not target:
+        return False
+
+    brand_value = normalize_text_case(brand, field="brand")
+    color_value = normalize_text_case(color, field="color")
+    material_value = normalize_text_case(material, field="material")
+    attribute_1_value = normalize_text_case(attribute_1, field="attribute_1")
+    attribute_2_value = normalize_text_case(attribute_2, field="attribute_2")
+    location_value = normalize_text_case(location, field="location")
+    filament_amount_value = round(max(_to_float(filament_amount, 0.0), 0.0), 2)
+    roll_weight_value = _to_float(roll_weight)
+    is_empty_value = 1 if _to_bool(is_empty, False) else 0
+
+    with open_database(write=True) as conn:
+        cursor = conn.execute(
+            """
+            UPDATE inventory
+            SET
+                brand = ?,
+                color = ?,
+                material = ?,
+                attribute_1 = ?,
+                attribute_2 = ?,
+                location = ?,
+                filament_amount = ?,
+                roll_weight = ?,
+                is_empty = ?
+            WHERE barcode = ?
+            """,
+            (
+                brand_value,
+                color_value,
+                material_value,
+                attribute_1_value,
+                attribute_2_value,
+                location_value,
+                filament_amount_value,
+                roll_weight_value,
+                is_empty_value,
+                target,
+            ),
+        )
+        if cursor.rowcount <= 0:
+            return False
+
+        conn.execute(
+            """
+            UPDATE usage_events
+            SET
+                brand = ?,
+                color = ?,
+                material = ?,
+                attribute_1 = ?,
+                attribute_2 = ?,
+                location = ?
+            WHERE barcode = ?
+            """,
+            (
+                brand_value,
+                color_value,
+                material_value,
+                attribute_1_value,
+                attribute_2_value,
+                location_value,
+                target,
+            ),
+        )
+
+    return True

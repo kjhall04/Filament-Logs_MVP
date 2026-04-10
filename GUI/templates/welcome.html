@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome | Filament Logs{% endblock %}
+
+{% block content %}
+<div class="app-page app-page-narrow">
+    <div class="app-page-header">
+        <div>
+            <h1 class="app-page-title">First-Launch Setup</h1>
+            <p class="app-page-meta app-page-subtitle">
+                Configure common defaults and review the core workflow before using the app.
+            </p>
+        </div>
+    </div>
+
+    <div class="app-page-panel">
+        <h2 class="h5 mb-3">Quick Start Guide</h2>
+        <ol class="mb-0">
+            <li>Use <strong>Add Roll</strong> to register new filament with barcode + starting weight.</li>
+            <li>Use <strong>Log Usage</strong> whenever you measure a roll after printing.</li>
+            <li>Use <strong>Favorites</strong> to star commonly used materials/colors.</li>
+            <li>Use <strong>Usage Stats</strong> to track total and grouped consumption over time.</li>
+            <li>Use the project issue tracker if anything behaves unexpectedly.</li>
+        </ol>
+    </div>
+
+    <form method="post" class="app-page-panel">
+        <input type="hidden" name="next" value="{{ next_path }}">
+        <h2 class="h5 mb-3">Configuration Defaults</h2>
+
+        <div class="row g-3">
+            {% set include_low_stock_alerts = false %}
+            {% include "_settings_general_fields.html" %}
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            <button type="submit" name="action" value="save" class="btn btn-primary">
+                Save and Continue
+            </button>
+            <button type="submit" name="action" value="skip" class="btn btn-outline-secondary">
+                Skip for Now
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

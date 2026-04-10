@@ -3,181 +3,185 @@
 {% block title %}Add New Roll | Filament Logs{% endblock %}
 
 {% block content %}
-<h1 class="mb-3">Add New Filament Roll</h1>
-
-{% if step == "info" %}
-<div class="mb-3 d-flex gap-2">
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
-    <button type="submit" form="infoForm" class="btn btn-primary">Generate Barcode</button>
-</div>
-
-<form method="post" id="infoForm" autocomplete="off" novalidate>
-    <div class="mb-3">
-        <label class="form-label" for="brand">Brand</label>
-        <input
-            type="text"
-            id="brand"
-            name="brand"
-            class="form-control"
-            value="{{ brand }}"
-            list="brandOptions"
-            placeholder="Enter brand"
-            required
-        >
-        <datalist id="brandOptions">
-            {% for option in brand_options %}
-            <option value="{{ option }}"></option>
-            {% endfor %}
-        </datalist>
+<div class="app-page">
+    <div class="app-page-header">
+        <h1 class="app-page-title">Add New Filament Roll</h1>
+        <div class="app-page-actions">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
+            {% if step == "info" %}
+            <button type="submit" form="infoForm" class="btn btn-primary">Generate Barcode</button>
+            {% elif step == "weight" %}
+            <button type="submit" form="weightForm" class="btn btn-primary">Submit Weight</button>
+            {% endif %}
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label class="form-label" for="color">Color</label>
-        <input
-            type="text"
-            id="color"
-            name="color"
-            class="form-control"
-            value="{{ color }}"
-            list="colorOptions"
-            placeholder="Enter color"
-            required
-        >
-        <datalist id="colorOptions">
-            {% for option in color_options %}
-            <option value="{{ option }}"></option>
-            {% endfor %}
-        </datalist>
+    {% if step == "weight" %}
+    <div class="alert alert-info">
+        <strong>Barcode:</strong> {{ barcode }}
     </div>
 
-    <div class="mb-3">
-        <label class="form-label" for="material">Material</label>
-        <input
-            type="text"
-            id="material"
-            name="material"
-            class="form-control"
-            value="{{ material }}"
-            list="materialOptions"
-            placeholder="Enter material"
-            required
-        >
-        <datalist id="materialOptions">
-            {% for option in material_options %}
-            <option value="{{ option }}"></option>
-            {% endfor %}
-        </datalist>
+    {% if roll_state == "used" and mapped_roll_weight is not none %}
+    <div class="alert alert-success">
+        <strong>Used roll map:</strong> {{ '%.2f'|format(mapped_roll_weight) }} g
+        {% if mapped_roll_weight_match %}
+        (match: {{ mapped_roll_weight_match }})
+        {% endif %}
     </div>
+    {% endif %}
+    {% endif %}
 
-    <div class="mb-3">
-        <label class="form-label" for="attribute_1">Attribute 1</label>
-        <input
-            type="text"
-            id="attribute_1"
-            name="attribute_1"
-            class="form-control"
-            value="{{ attribute_1 }}"
-            list="attributeOptions1"
-            placeholder="Enter attribute 1 (optional)"
-        >
-        <datalist id="attributeOptions1">
-            {% for option in attribute_options if option %}
-            <option value="{{ option }}"></option>
-            {% endfor %}
-        </datalist>
-    </div>
+    {% if step == "info" %}
+    <form method="post" id="infoForm" autocomplete="off" novalidate class="app-page-panel">
+        <div class="mb-3">
+            <label class="form-label" for="brand">Brand</label>
+            <input
+                type="text"
+                id="brand"
+                name="brand"
+                class="form-control"
+                value="{{ brand }}"
+                list="brandOptions"
+                placeholder="Enter brand"
+                required
+            >
+            <datalist id="brandOptions">
+                {% for option in brand_options %}
+                <option value="{{ option }}"></option>
+                {% endfor %}
+            </datalist>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label" for="attribute_2">Attribute 2</label>
-        <input
-            type="text"
-            id="attribute_2"
-            name="attribute_2"
-            class="form-control"
-            value="{{ attribute_2 }}"
-            list="attributeOptions2"
-            placeholder="Enter attribute 2 (optional)"
-        >
-        <datalist id="attributeOptions2">
-            {% for option in attribute_options if option %}
-            <option value="{{ option }}"></option>
-            {% endfor %}
-        </datalist>
-    </div>
+        <div class="mb-3">
+            <label class="form-label" for="color">Color</label>
+            <input
+                type="text"
+                id="color"
+                name="color"
+                class="form-control"
+                value="{{ color }}"
+                list="colorOptions"
+                placeholder="Enter color"
+                required
+            >
+            <datalist id="colorOptions">
+                {% for option in color_options %}
+                <option value="{{ option }}"></option>
+                {% endfor %}
+            </datalist>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label" for="location">Location</label>
-        <input
-            type="text"
-            id="location"
-            name="location"
-            class="form-control"
-            value="{{ location }}"
-            list="locationOptions"
-            placeholder="Enter location"
-            required
-        >
-        <datalist id="locationOptions">
-            {% for option in location_options %}
-            <option value="{{ option }}"></option>
-            {% endfor %}
-        </datalist>
-    </div>
+        <div class="mb-3">
+            <label class="form-label" for="material">Material</label>
+            <input
+                type="text"
+                id="material"
+                name="material"
+                class="form-control"
+                value="{{ material }}"
+                list="materialOptions"
+                placeholder="Enter material"
+                required
+            >
+            <datalist id="materialOptions">
+                {% for option in material_options %}
+                <option value="{{ option }}"></option>
+                {% endfor %}
+            </datalist>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label" for="roll_state">Roll Condition</label>
-        <select id="roll_state" name="roll_state" class="form-select">
-            <option value="new" {% if roll_state != 'used' %}selected{% endif %}>New / Full Roll</option>
-            <option value="used" {% if roll_state == 'used' %}selected{% endif %}>Used / Partial Roll</option>
-        </select>
-        <small class="form-text">Used rolls estimate roll weight from weight_mapping.json.</small>
-    </div>
-</form>
-{% elif step == "weight" %}
-<div class="mb-3 d-flex gap-2">
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
-    <button type="submit" form="weightForm" class="btn btn-primary">Submit Weight</button>
-</div>
+        <div class="mb-3">
+            <label class="form-label" for="attribute_1">Attribute 1</label>
+            <input
+                type="text"
+                id="attribute_1"
+                name="attribute_1"
+                class="form-control"
+                value="{{ attribute_1 }}"
+                list="attributeOptions1"
+                placeholder="Enter attribute 1 (optional)"
+            >
+            <datalist id="attributeOptions1">
+                {% for option in attribute_options if option %}
+                <option value="{{ option }}"></option>
+                {% endfor %}
+            </datalist>
+        </div>
 
-<div class="alert alert-info">
-    <strong>Barcode:</strong> {{ barcode }}
-</div>
+        <div class="mb-3">
+            <label class="form-label" for="attribute_2">Attribute 2</label>
+            <input
+                type="text"
+                id="attribute_2"
+                name="attribute_2"
+                class="form-control"
+                value="{{ attribute_2 }}"
+                list="attributeOptions2"
+                placeholder="Enter attribute 2 (optional)"
+            >
+            <datalist id="attributeOptions2">
+                {% for option in attribute_options if option %}
+                <option value="{{ option }}"></option>
+                {% endfor %}
+            </datalist>
+        </div>
 
-{% if roll_state == "used" and mapped_roll_weight is not none %}
-<div class="alert alert-success">
-    <strong>Used roll map:</strong> {{ '%.2f'|format(mapped_roll_weight) }} g
-    {% if mapped_roll_weight_match %}
-    (match: {{ mapped_roll_weight_match }})
+        <div class="mb-3">
+            <label class="form-label" for="location">Location</label>
+            <input
+                type="text"
+                id="location"
+                name="location"
+                class="form-control"
+                value="{{ location }}"
+                list="locationOptions"
+                placeholder="Enter location"
+                required
+            >
+            <datalist id="locationOptions">
+                {% for option in location_options %}
+                <option value="{{ option }}"></option>
+                {% endfor %}
+            </datalist>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="roll_state">Roll Condition</label>
+            <select id="roll_state" name="roll_state" class="form-select">
+                <option value="new" {% if roll_state != 'used' %}selected{% endif %}>New / Full Roll</option>
+                <option value="used" {% if roll_state == 'used' %}selected{% endif %}>Used / Partial Roll</option>
+            </select>
+            <small class="form-text">Used rolls estimate roll weight from weight_mapping.json.</small>
+        </div>
+    </form>
+    {% elif step == "weight" %}
+    <form method="post" id="weightForm" autocomplete="off" novalidate class="app-page-panel">
+        <input type="hidden" name="step" value="weight">
+        <input type="hidden" name="brand" value="{{ brand }}">
+        <input type="hidden" name="color" value="{{ color }}">
+        <input type="hidden" name="material" value="{{ material }}">
+        <input type="hidden" name="attribute_1" value="{{ attribute_1 }}">
+        <input type="hidden" name="attribute_2" value="{{ attribute_2 }}">
+        <input type="hidden" name="location" value="{{ location }}">
+        <input type="hidden" name="barcode" value="{{ barcode }}">
+        <input type="hidden" name="roll_state" value="{{ roll_state }}">
+
+        <div class="mb-3">
+            <label class="form-label" for="weight">Current Weight (g)</label>
+            <div class="input-group">
+                <input type="text" id="weight" name="weight" class="form-control" value="{{ scale_weight|default('', true) }}" autocomplete="off">
+                <button class="btn btn-outline-secondary" type="button" id="getWeightBtn">Get Weight</button>
+            </div>
+            {% if roll_state == "used" and mapped_roll_weight is not none %}
+            <small class="form-text">Remaining filament will be calculated from current weight minus mapped roll weight.</small>
+            {% else %}
+            <small class="form-text">Configured filament amount in settings: {{ '%.2f'|format(app_settings.filament_amount_g) }} g.</small>
+            {% endif %}
+            <div id="scaleStatus" class="form-text"></div>
+        </div>
+    </form>
     {% endif %}
 </div>
-{% endif %}
-
-<form method="post" id="weightForm" autocomplete="off" novalidate>
-    <input type="hidden" name="step" value="weight">
-    <input type="hidden" name="brand" value="{{ brand }}">
-    <input type="hidden" name="color" value="{{ color }}">
-    <input type="hidden" name="material" value="{{ material }}">
-    <input type="hidden" name="attribute_1" value="{{ attribute_1 }}">
-    <input type="hidden" name="attribute_2" value="{{ attribute_2 }}">
-    <input type="hidden" name="location" value="{{ location }}">
-    <input type="hidden" name="barcode" value="{{ barcode }}">
-    <input type="hidden" name="roll_state" value="{{ roll_state }}">
-
-    <div class="mb-3">
-        <label class="form-label" for="weight">Current Weight (g)</label>
-        <div class="input-group">
-            <input type="text" id="weight" name="weight" class="form-control" value="{{ scale_weight|default('', true) }}" autocomplete="off">
-            <button class="btn btn-outline-secondary" type="button" id="getWeightBtn">Get Weight</button>
-        </div>
-        {% if roll_state == "used" and mapped_roll_weight is not none %}
-        <small class="form-text">Remaining filament will be calculated from current weight minus mapped roll weight.</small>
-        {% else %}
-        <small class="form-text">Configured filament amount in settings: {{ '%.2f'|format(app_settings.filament_amount_g) }} g.</small>
-        {% endif %}
-        <div id="scaleStatus" class="form-text"></div>
-    </div>
-</form>
-{% endif %}
 {% endblock %}
 
 {% block scripts %}

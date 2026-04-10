@@ -1,66 +1,137 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Favorites | Filament Logs{% endblock %}
 
+{% block head_extra %}
+<style>
+    .favorites-search-toolbar {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .favorites-empty {
+        border: 1px dashed var(--app-border);
+        border-radius: 0.8rem;
+        background: var(--app-surface-soft);
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .favorites-low-badge {
+        min-width: 2.5rem;
+        display: inline-flex;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Favorite Filaments</h1>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
-</div>
+<div class="app-page">
+    <div class="app-page-header">
+        <div>
+            <h1 class="app-page-title">Favorite Filaments</h1>
+            <p class="app-page-meta app-page-subtitle">
+                Saved favorite profiles grouped by brand, color, material, and attributes.
+            </p>
+        </div>
+    </div>
 
-<div class="mb-3">
-    <input type="text" id="searchInput" class="form-control" placeholder="Search favorites...">
-</div>
+    <section class="app-page-panel">
+        <div class="favorites-search-toolbar">
+            <div>
+                <label for="searchInput" class="form-label">Search Favorites</label>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search favorites... (supports color families like 'blue')">
+                <small class="form-text">Search matches brand, color, material, attributes, counts, and mapped color-family tokens.</small>
+            </div>
 
-<div class="table-responsive">
-    <table class="table table-striped" id="favoritesTable">
-        <thead>
-            <tr>
-                <th>Brand</th>
-                <th>Color</th>
-                <th>Material</th>
-                <th>Attribute 1</th>
-                <th>Attribute 2</th>
-                <th>Count</th>
-                <th>Low</th>
-                <th>Buy</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for fav in favorites %}
-            <tr>
-                <td>{{ fav.brand or '' }}</td>
-                <td>{{ fav.color or '' }}</td>
-                <td>{{ fav.material or '' }}</td>
-                <td>{{ fav.attribute_1 or '' }}</td>
-                <td>{{ fav.attribute_2 or '' }}</td>
-                <td>{{ fav.total_count }}</td>
-                <td>{{ fav.low_count }}</td>
-                <td>
-                    {% if fav.amazon_url %}
-                    <a href="{{ fav.amazon_url }}" target="_blank" class="btn btn-sm btn-primary">Amazon</a>
+            {% if not favorites %}
+            <div class="favorites-empty">
+                <p class="mb-1"><strong>No favorites yet.</strong></p>
+                <p class="app-page-meta mb-0">Star rolls from the Inventory page to build your favorites list.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="table-responsive mt-3">
+            <table class="table table-striped" id="favoritesTable">
+                <thead>
+                    <tr>
+                        <th>Brand</th>
+                        <th>Color</th>
+                        <th>Material</th>
+                        <th>Attribute 1</th>
+                        <th>Attribute 2</th>
+                        <th>Count</th>
+                        <th>Low</th>
+                        <th>Order</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fav in favorites %}
+                    <tr data-search-row="true">
+                        <td>{{ fav.brand or '' }}</td>
+                        <td>{{ fav.color or '' }}</td>
+                        <td>{{ fav.material or '' }}</td>
+                        <td>{{ fav.attribute_1 or '' }}</td>
+                        <td>{{ fav.attribute_2 or '' }}</td>
+                        <td>{{ fav.total_count }}</td>
+                        <td>
+                            <span class="badge favorites-low-badge {% if fav.low_count %}text-bg-warning{% else %}text-bg-secondary{% endif %}">
+                                {{ fav.low_count }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if fav.order_url %}
+                            <a href="{{ fav.order_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary">{{ fav.order_label }}</a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not favorites %}
+                    <tr>
+                        <td colspan="8" class="text-muted">No favorite profiles have been starred yet.</td>
+                    </tr>
                     {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+const rows = Array.from(document.querySelectorAll("#favoritesTable tbody tr[data-search-row='true']"));
+const colorSearchTokens = {{ color_search_tokens|default({}, true)|tojson|safe }};
+
+function normalizeSearchText(value) {
+    return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function buildRowSearchBlob(row) {
+    const cells = Array.from(row.querySelectorAll("td"));
+    const baseText = cells
+        .map((cell) => normalizeSearchText(cell.textContent))
+        .filter(Boolean)
+        .join(" ");
+    const colorText = normalizeSearchText(cells[1] ? cells[1].textContent : "");
+    const categoryTokens = Array.isArray(colorSearchTokens[colorText]) ? colorSearchTokens[colorText] : [];
+    return `${baseText} ${categoryTokens.join(" ")}`.trim();
+}
+
+rows.forEach((row) => {
+    row.dataset.searchBlob = buildRowSearchBlob(row);
+});
+
 document.getElementById("searchInput").addEventListener("input", function () {
-    const filter = this.value.trim().toLowerCase();
-    const rows = document.querySelectorAll("#favoritesTable tbody tr");
+    const filter = normalizeSearchText(this.value);
+    const filterTerms = filter.split(" ").filter(Boolean);
 
     rows.forEach((row) => {
-        let match = false;
-        row.querySelectorAll("td").forEach((cell) => {
-            if (cell.textContent.toLowerCase().includes(filter)) {
-                match = true;
-            }
-        });
+        const searchBlob = row.dataset.searchBlob || "";
+        const match = filterTerms.every((term) => searchBlob.includes(term));
         row.style.display = match ? "" : "none";
     });
 });

@@ -16,5 +16,7 @@
   "negative_filament_policy": "block",
   "auto_backup_on_write": false,
   "backup_retention_days": 30,
-  "low_stock_alerts": false
+  "low_stock_alerts": true,
+  "onboarding_completed": true,
+  "onboarding_completed_at": "2026-02-20T14:37:31"
 }

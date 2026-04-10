@@ -41,12 +41,12 @@ def _append_event(
     times_logged_out,
     source,
 ):
-    brand = normalize_text_case(brand)
-    color = normalize_text_case(color)
-    material = normalize_text_case(material)
-    attr1 = normalize_text_case(attr1)
-    attr2 = normalize_text_case(attr2)
-    location = normalize_text_case(location)
+    brand = normalize_text_case(brand, field="brand")
+    color = normalize_text_case(color, field="color")
+    material = normalize_text_case(material, field="material")
+    attr1 = normalize_text_case(attr1, field="attribute_1")
+    attr2 = normalize_text_case(attr2, field="attribute_2")
+    location = normalize_text_case(location, field="location")
 
     conn.execute(
         """
@@ -222,12 +222,12 @@ def add_new_roll_web(
     filament_amount = round(starting_weight_value - roll_weight, 2)
     threshold_value = _to_float(empty_threshold, default=EMPTY_THRESHOLD)
 
-    brand = normalize_text_case(brand)
-    color = normalize_text_case(color)
-    material = normalize_text_case(material)
-    attr1 = normalize_text_case(attr1)
-    attr2 = normalize_text_case(attr2)
-    location = normalize_text_case(location)
+    brand = normalize_text_case(brand, field="brand")
+    color = normalize_text_case(color, field="color")
+    material = normalize_text_case(material, field="material")
+    attr1 = normalize_text_case(attr1, field="attribute_1")
+    attr2 = normalize_text_case(attr2, field="attribute_2")
+    location = normalize_text_case(location, field="location")
 
     if not barcode:
         barcode = generate_barcode.generate_filament_barcode(

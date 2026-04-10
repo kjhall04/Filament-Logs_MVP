@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Roll | Filament Logs{% endblock %}
+
+{% block content %}
+<div class="app-page">
+    <div class="app-page-header">
+        <h1 class="app-page-title">Edit Roll</h1>
+    </div>
+
+    <section class="app-page-panel">
+        <p class="app-page-meta mb-3">
+            Barcode: <strong>{{ barcode }}</strong> |
+            Logged usage count: <strong>{{ times_logged_out }}</strong>
+        </p>
+
+        <form method="post" class="row g-3">
+            <div class="col-md-4">
+                <label for="brand" class="form-label">Brand</label>
+                <select class="form-select" id="brand" name="brand" required>
+                    <option value="" disabled {% if not form_data.brand %}selected{% endif %}>Select brand</option>
+                    {% for option in brand_options %}
+                    <option value="{{ option }}" {% if form_data.brand == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="color" class="form-label">Color</label>
+                <select class="form-select" id="color" name="color" required>
+                    <option value="" disabled {% if not form_data.color %}selected{% endif %}>Select color</option>
+                    {% for option in color_options %}
+                    <option value="{{ option }}" {% if form_data.color == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="material" class="form-label">Material</label>
+                <select class="form-select" id="material" name="material" required>
+                    <option value="" disabled {% if not form_data.material %}selected{% endif %}>Select material</option>
+                    {% for option in material_options %}
+                    <option value="{{ option }}" {% if form_data.material == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="attribute_1" class="form-label">Attribute 1</label>
+                <select class="form-select" id="attribute_1" name="attribute_1">
+                    {% for option in attribute_options %}
+                    <option value="{{ option }}" {% if form_data.attribute_1 == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="attribute_2" class="form-label">Attribute 2</label>
+                <select class="form-select" id="attribute_2" name="attribute_2">
+                    {% for option in attribute_options %}
+                    <option value="{{ option }}" {% if form_data.attribute_2 == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="location" class="form-label">Location</label>
+                <select class="form-select" id="location" name="location">
+                    {% for option in location_options %}
+                    <option value="{{ option }}" {% if form_data.location == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="filament_amount" class="form-label">Filament Amount (g)</label>
+                <input
+                    type="number"
+                    class="form-control"
+                    id="filament_amount"
+                    name="filament_amount"
+                    step="0.01"
+                    min="0"
+                    value="{{ form_data.filament_amount }}"
+                    required
+                >
+            </div>
+
+            <div class="col-md-6">
+                <label for="roll_weight" class="form-label">Roll Weight (g)</label>
+                <input
+                    type="number"
+                    class="form-control"
+                    id="roll_weight"
+                    name="roll_weight"
+                    step="0.01"
+                    min="0"
+                    value="{{ form_data.roll_weight }}"
+                    placeholder="Optional"
+                >
+            </div>
+
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

@@ -27,6 +27,10 @@
             --app-accent-contrast: #ffffff;
             --app-gradient: linear-gradient(120deg, #201870 0%, #88c038 100%);
             --app-navbar-bg: rgba(255, 255, 255, 0.9);
+            --app-shell-top-gap: 0.5rem;
+            --app-shell-side-gap: 0.5rem;
+            --app-content-top-gap: 1.5rem;
+            --app-page-header-min-height: 5.5rem;
             --app-bg-image:
                 radial-gradient(70rem 42rem at -10% -16%, rgba(32, 24, 112, 0.2), transparent 58%),
                 radial-gradient(58rem 32rem at 112% -12%, rgba(136, 192, 56, 0.2), transparent 55%),
@@ -39,6 +43,12 @@
             --bs-emphasis-color: var(--app-text);
             --bs-border-color: var(--app-border);
             --bs-tertiary-bg: var(--app-surface);
+        }
+
+        html {
+            /* Keep layout width stable between pages with/without vertical scrollbars. */
+            scrollbar-gutter: stable;
+            overflow-y: scroll;
         }
 
         html[data-theme="dark"] {
@@ -76,6 +86,7 @@
             background-attachment: fixed;
             color: var(--app-text);
             font-family: "Sora", "Segoe UI", sans-serif;
+            padding-top: var(--app-shell-top-gap);
         }
 
         h1,
@@ -96,7 +107,7 @@
             border-color: var(--app-border);
             border-top: 0;
             border-radius: 1rem;
-            margin: 0 0.75rem;
+            margin: 0 var(--app-shell-side-gap);
             box-shadow: var(--app-card-shadow);
         }
 
@@ -108,12 +119,17 @@
 
         .navbar .navbar-brand {
             font-weight: 700;
+            font-size: 1.5rem;
             letter-spacing: 0.02em;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .navbar .nav-link {
             border-radius: 999px;
             padding: 0.35rem 0.85rem !important;
+            font-weight: 600;
+            white-space: nowrap;
             transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
         }
 
@@ -123,7 +139,6 @@
         }
 
         .navbar .nav-link.active {
-            font-weight: 600;
             color: #ffffff;
             background: var(--app-gradient);
             box-shadow: 0 6px 14px rgba(var(--app-accent-rgb), 0.35);
@@ -153,6 +168,18 @@
             width: auto;
             border-radius: 0.65rem;
             background-color: #ffffff;
+        }
+
+        .app-navbar-links {
+            min-width: 0;
+        }
+
+        .app-navbar-meta {
+            flex: 0 0 auto;
+        }
+
+        .app-navbar-meta .navbar-text {
+            white-space: nowrap;
         }
 
         .text-muted,
@@ -288,7 +315,92 @@
         }
 
         .app-container {
-            margin-top: 1.5rem;
+            margin-top: 0;
+            padding-top: var(--app-content-top-gap);
+            display: flow-root;
+        }
+
+        .app-page {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .app-page-narrow {
+            max-width: 1100px;
+            margin-inline: auto;
+        }
+
+        .app-page-header {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: start;
+            gap: 0.75rem 1rem;
+            min-height: var(--app-page-header-min-height);
+        }
+
+        .app-page-header > * {
+            min-width: 0;
+        }
+
+        .app-page-title {
+            margin: 0;
+        }
+
+        .app-page-header-meta {
+            justify-self: end;
+            text-align: right;
+            align-self: start;
+        }
+
+        .app-page-subtitle {
+            margin-top: 0.5rem;
+        }
+
+        .app-page-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-self: end;
+            align-self: start;
+            justify-content: flex-end;
+        }
+
+        .app-page-meta {
+            margin: 0;
+            color: var(--app-muted);
+        }
+
+        .app-page-panel {
+            background-color: var(--app-surface);
+            border: 1px solid var(--app-border);
+            border-radius: 0.9rem;
+            box-shadow: var(--app-card-shadow);
+            padding: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .app-page-panel {
+                padding: 1.25rem 1.5rem;
+            }
+
+            .app-page-actions {
+                flex-wrap: nowrap;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .app-page-header {
+                grid-template-columns: 1fr;
+                min-height: 0;
+            }
+
+            .app-page-actions,
+            .app-page-header-meta {
+                justify-self: start;
+                text-align: left;
+                justify-content: flex-start;
+            }
         }
 
         .table-responsive {
@@ -320,6 +432,81 @@
         .app-alert {
             border-left: 4px solid currentColor;
             box-shadow: var(--app-card-shadow);
+        }
+
+        .app-alert.alert-success {
+            background-color: #e7f8ee;
+            border-color: #9ad8b2;
+            color: #14532d;
+        }
+
+        .app-alert.alert-danger {
+            background-color: #fdecec;
+            border-color: #f1b7bd;
+            color: #7f1d1d;
+        }
+
+        .app-alert.alert-warning {
+            background-color: #fff6e5;
+            border-color: #f2d39b;
+            color: #7c4a03;
+        }
+
+        .app-alert.alert-info,
+        .app-alert.alert-primary {
+            background-color: #e9f2ff;
+            border-color: #b9cff3;
+            color: #1e3a8a;
+        }
+
+        .app-alert.alert-secondary,
+        .app-alert.alert-light,
+        .app-alert.alert-dark {
+            background-color: #eef1f8;
+            border-color: #cfd6e7;
+            color: #1f2937;
+        }
+
+        html[data-theme="dark"] .app-alert {
+            border-width: 1px 1px 1px 4px;
+        }
+
+        html[data-theme="dark"] .app-alert.alert-success {
+            background-color: #173427;
+            border-color: #2f7a55;
+            color: #cbf9e1;
+        }
+
+        html[data-theme="dark"] .app-alert.alert-danger {
+            background-color: #3b1b24;
+            border-color: #8a3b4b;
+            color: #ffd5dc;
+        }
+
+        html[data-theme="dark"] .app-alert.alert-warning {
+            background-color: #3a2d15;
+            border-color: #8e6d2d;
+            color: #ffe8bf;
+        }
+
+        html[data-theme="dark"] .app-alert.alert-info,
+        html[data-theme="dark"] .app-alert.alert-primary {
+            background-color: #1a294a;
+            border-color: #4262a8;
+            color: #d7e6ff;
+        }
+
+        html[data-theme="dark"] .app-alert.alert-secondary,
+        html[data-theme="dark"] .app-alert.alert-light,
+        html[data-theme="dark"] .app-alert.alert-dark {
+            background-color: #1f2746;
+            border-color: #44527b;
+            color: #e5ebff;
+        }
+
+        html[data-theme="dark"] .app-alert .btn-close {
+            filter: invert(1) grayscale(100%) brightness(140%);
+            opacity: 0.85;
         }
 
         .favorite-btn {
@@ -355,7 +542,36 @@
             color: var(--app-text) !important;
         }
 
+        @media (min-width: 992px) {
+            .navbar .container-fluid {
+                min-height: 88px;
+            }
+
+            .navbar .navbar-collapse {
+                display: flex !important;
+                flex-wrap: nowrap;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .navbar .app-navbar-links {
+                flex-wrap: nowrap;
+            }
+
+            .navbar .app-navbar-meta {
+                display: flex;
+                flex-wrap: nowrap;
+                align-items: center;
+                gap: 0.5rem;
+                margin-left: auto;
+            }
+        }
+
         @media (max-width: 991.98px) {
+            body {
+                padding-top: 0;
+            }
+
             .navbar {
                 margin: 0;
                 border-radius: 0;
@@ -378,17 +594,18 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="appNavbar">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <ul class="navbar-nav app-navbar-links me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">Inventory</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'log_filament' %}active{% endif %}" href="{{ url_for('log_filament') }}">Log Usage</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'new_roll' %}active{% endif %}" href="{{ url_for('new_roll') }}">Add Roll</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'popular_filaments' %}active{% endif %}" href="{{ url_for('popular_filaments') }}">Popular</a></li>
-                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'low_empty_filaments' %}active{% endif %}" href="{{ url_for('low_empty_filaments') }}">Low</a></li>
-                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'empty_rolls' %}active{% endif %}" href="{{ url_for('empty_rolls') }}">Empty</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'usage_stats' %}active{% endif %}" href="{{ url_for('usage_stats') }}">Usage Stats</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.endpoint in ['stock_status', 'low_empty_filaments', 'empty_rolls'] %}active{% endif %}" href="{{ url_for('stock_status') }}">Stock</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'favorites' %}active{% endif %}" href="{{ url_for('favorites') }}">Favorites</a></li>
             </ul>
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 app-navbar-meta">
                 <span class="navbar-text small">{{ app_settings.theme|capitalize }} mode</span>
+                <span class="navbar-text small">v{{ app_release.version }}</span>
                 <a href="{{ url_for('settings') }}" class="btn btn-outline-secondary btn-sm {% if request.endpoint == 'settings' %}active{% endif %}">Settings</a>
                 <div class="app-logo-badge">
                     <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="MakerCampus logo" class="app-logo-image">

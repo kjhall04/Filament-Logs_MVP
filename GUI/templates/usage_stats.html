@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Usage Stats | Filament Logs{% endblock %}
+
+{% block content %}
+{% if selected_weeks == 'custom' %}
+{% set print_url = url_for('usage_stats_print', start=start_input, end=end_input) %}
+{% else %}
+{% set print_url = url_for('usage_stats_print', weeks=selected_weeks) %}
+{% endif %}
+<div class="app-page">
+    <div class="app-page-header">
+        <h1 class="app-page-title">Usage Analytics</h1>
+        <div class="app-page-actions">
+            <a href="{{ print_url }}" class="btn btn-outline-secondary" target="_blank" rel="noopener noreferrer">Printable PDF Report</a>
+        </div>
+    </div>
+
+    <form method="get" class="app-page-panel">
+        <div class="row g-3 align-items-end">
+            <div class="col-sm-6 col-md-3">
+                <label for="weeks" class="form-label">Quick Window</label>
+                <select id="weeks" name="weeks" class="form-select">
+                    <option value="all" {% if selected_weeks == 'all' %}selected{% endif %}>All Time</option>
+                    <option value="1" {% if selected_weeks == '1' %}selected{% endif %}>Last 1 Week</option>
+                    <option value="4" {% if selected_weeks == '4' %}selected{% endif %}>Last 4 Weeks</option>
+                    <option value="8" {% if selected_weeks == '8' %}selected{% endif %}>Last 8 Weeks</option>
+                    <option value="12" {% if selected_weeks == '12' %}selected{% endif %}>Last 12 Weeks</option>
+                    <option value="26" {% if selected_weeks == '26' %}selected{% endif %}>Last 26 Weeks</option>
+                    <option value="52" {% if selected_weeks == '52' %}selected{% endif %}>Last 52 Weeks</option>
+                </select>
+            </div>
+
+            <div class="col-sm-6 col-md-3">
+                <label for="start" class="form-label">Start Date</label>
+                <input id="start" name="start" type="date" class="form-control" value="{{ start_input }}">
+            </div>
+
+            <div class="col-sm-6 col-md-3">
+                <label for="end" class="form-label">End Date</label>
+                <input id="end" name="end" type="date" class="form-control" value="{{ end_input }}">
+            </div>
+
+            <div class="col-sm-6 col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-fill">Apply</button>
+                <a href="{{ url_for('usage_stats') }}" class="btn btn-outline-secondary flex-fill">Reset</a>
+            </div>
+        </div>
+        <p class="text-muted mt-3 mb-0">Showing range: <strong>{{ range_label }}</strong></p>
+    </form>
+
+    <div class="row g-3">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card p-3 h-100">
+                <p class="text-muted mb-1">Total Used</p>
+                <p class="h4 mb-0">{{ "%.2f"|format(stats.total_used_g) }} g</p>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card p-3 h-100">
+                <p class="text-muted mb-1">Usage Events</p>
+                <p class="h4 mb-0">{{ stats.event_count }}</p>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card p-3 h-100">
+                <p class="text-muted mb-1">Rolls Touched</p>
+                <p class="h4 mb-0">{{ stats.rolls_touched }}</p>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card p-3 h-100">
+                <p class="text-muted mb-1">Average per Event</p>
+                <p class="h4 mb-0">{{ "%.2f"|format(stats.average_per_event_g) }} g</p>
+            </div>
+        </div>
+    </div>
+
+    {% if stats.last_event %}
+    <p class="app-page-meta">
+        First usage event in range: {{ stats.first_event }} |
+        Last usage event in range: {{ stats.last_event }}
+    </p>
+    {% endif %}
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card p-3 h-100">
+                <h2 class="h5 mb-3">Usage by Material</h2>
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Material</th>
+                                <th>Used (g)</th>
+                                <th>Events</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in stats.by_material %}
+                            <tr>
+                                <td>{{ row.material }}</td>
+                                <td>{{ "%.2f"|format(row.used_g) }}</td>
+                                <td>{{ row.event_count }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% if not stats.by_material %}
+                            <tr>
+                                <td colspan="3" class="text-muted">No usage events found for this range.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card p-3 h-100">
+                <h2 class="h5 mb-3">Usage by Color</h2>
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Color</th>
+                                <th>Used (g)</th>
+                                <th>Events</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in stats.by_color %}
+                            <tr>
+                                <td>{{ row.color }}</td>
+                                <td>{{ "%.2f"|format(row.used_g) }}</td>
+                                <td>{{ row.event_count }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% if not stats.by_color %}
+                            <tr>
+                                <td colspan="3" class="text-muted">No usage events found for this range.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-3">
+        <h2 class="h5 mb-3">Daily Usage</h2>
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Used (g)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in stats.daily_usage %}
+                    <tr>
+                        <td>{{ row.date }}</td>
+                        <td>{{ "%.2f"|format(row.used_g) }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not stats.daily_usage %}
+                    <tr>
+                        <td colspan="2" class="text-muted">No daily usage data available for this range.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

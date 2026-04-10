@@ -1,0 +1,24 @@
+{
+  "default": {
+    "label": "Amazon",
+    "url_template": "https://www.amazon.com/s?k={query}"
+  },
+  "brands": {
+    "bambu labs": {
+      "label": "Bambu Store",
+      "url_template": "https://us.store.bambulab.com/search?q={query}"
+    },
+    "prusa": {
+      "label": "Prusa Store",
+      "url_template": "https://www.prusa3d.com/search/?q={query}"
+    },
+    "polymaker": {
+      "label": "Polymaker",
+      "url_template": "https://us.polymaker.com/search?q={query}"
+    },
+    "matterhackers": {
+      "label": "MatterHackers",
+      "url_template": "https://www.matterhackers.com/store/search?query={query}"
+    }
+  }
+}

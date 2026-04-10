@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Status | Filament Logs{% endblock %}
+
+{% block content %}
+<div class="app-page">
+    <div class="app-page-header">
+        <div>
+            <h1 class="app-page-title">Stock Status</h1>
+            <p class="app-page-meta app-page-subtitle">
+                Low threshold: {{ "%.0f"|format(low_threshold) }} g |
+                Empty threshold: {{ "%.0f"|format(empty_threshold) }} g
+            </p>
+        </div>
+        <div class="app-page-actions">
+            <a
+                href="{{ url_for('stock_status', view='low') }}"
+                class="btn {% if view == 'low' %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+            >
+                Low + Empty
+            </a>
+            <a
+                href="{{ url_for('stock_status', view='empty') }}"
+                class="btn {% if view == 'empty' %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+            >
+                Empty Only
+            </a>
+        </div>
+    </div>
+
+    <section class="app-page-panel">
+        <div class="mb-3">
+            <input
+                type="text"
+                id="searchInput"
+                class="form-control"
+                placeholder="Search... (type 'favorite' for starred)"
+            >
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped" id="stockStatusTable">
+                <thead>
+                    <tr>
+                        <th style="width:40px;"></th>
+                        <th>Brand</th>
+                        <th>Color</th>
+                        <th>Material</th>
+                        <th>Attribute 1</th>
+                        <th>Attribute 2</th>
+                        {% if view == "empty" %}
+                        <th>Last Logged</th>
+                        {% else %}
+                        <th>Filament Amount (g)</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr data-favorite="{{ 'true' if row.is_favorite and row.is_favorite|lower == 'true' else 'false' }}">
+                        <td class="text-center align-middle">
+                            {% if row.is_favorite and row.is_favorite|lower == 'true' %}
+                            <span class="favorite-star is-on">&#9733;</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ row.brand if row.brand is not none else '' }}</td>
+                        <td>{{ row.color if row.color is not none else '' }}</td>
+                        <td>{{ row.material if row.material is not none else '' }}</td>
+                        <td>{{ row.attribute_1 if row.attribute_1 is not none else '' }}</td>
+                        <td>{{ row.attribute_2 if row.attribute_2 is not none else '' }}</td>
+                        {% if view == "empty" %}
+                        <td>{{ row.last_logged if row.last_logged is not none else '' }}</td>
+                        {% else %}
+                        <td>{{ row.weight if row.weight is not none else '0' }}</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                    {% if not rows %}
+                    <tr>
+                        <td colspan="7" class="text-muted">
+                            No rolls matched this stock status view.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById("searchInput").addEventListener("input", function () {
+    const filter = this.value.trim().toLowerCase();
+    const rows = document.querySelectorAll("#stockStatusTable tbody tr");
+
+    rows.forEach((row) => {
+        let match = false;
+        if (filter === "favorite") {
+            match = row.dataset.favorite === "true";
+        } else {
+            row.querySelectorAll("td").forEach((cell) => {
+                if (cell.textContent.toLowerCase().includes(filter)) {
+                    match = true;
+                }
+            });
+        }
+        row.style.display = match ? "" : "none";
+    });
+});
+</script>
+{% endblock %}
