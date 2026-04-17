@@ -3,7 +3,7 @@ import os
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
-from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
+from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
 
 from backend import (
     app_release,
@@ -203,13 +203,27 @@ def should_skip_onboarding_redirect():
     return False
 
 
+def has_completed_onboarding(app_settings=None):
+    current_settings = app_settings if isinstance(app_settings, dict) else settings_store.load_settings()
+    completed_in_settings = bool(current_settings.get("onboarding_completed", False))
+    if completed_in_settings:
+        if runtime_storage_summary()["serverless"]:
+            session["onboarding_completed"] = True
+        return True
+
+    if runtime_storage_summary()["serverless"]:
+        return bool(session.get("onboarding_completed", False))
+
+    return False
+
+
 @app.before_request
 def enforce_onboarding():
     if should_skip_onboarding_redirect():
         return None
 
     app_settings = settings_store.load_settings()
-    if app_settings.get("onboarding_completed", False):
+    if has_completed_onboarding(app_settings):
         return None
 
     next_path = request.full_path if request.query_string else request.path
@@ -233,6 +247,8 @@ def welcome():
                     "onboarding_completed_at": timestamp_now_iso(),
                 }
             )
+            if runtime_storage_summary()["serverless"]:
+                session["onboarding_completed"] = True
             flash("First-launch setup skipped. You can reopen it from Settings anytime.", "info")
             return redirect(next_path)
 
@@ -260,6 +276,8 @@ def welcome():
             "onboarding_completed_at": timestamp_now_iso(),
         }
         settings_store.save_settings(updates)
+        if runtime_storage_summary()["serverless"]:
+            session["onboarding_completed"] = True
         flash("First-launch setup saved.", "success")
         return redirect(next_path)
 
