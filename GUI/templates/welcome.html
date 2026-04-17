@@ -10,6 +10,11 @@
             <p class="app-page-meta app-page-subtitle">
                 Configure common defaults and review the core workflow before using the app.
             </p>
+            {% if runtime_info.serverless %}
+            <p class="text-muted mb-0">
+                This shared demo stores data in temporary instance-local files, so resets are expected.
+            </p>
+            {% endif %}
         </div>
     </div>
 

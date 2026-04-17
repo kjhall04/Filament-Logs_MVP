@@ -56,6 +56,44 @@ Data is stored in a SQLite database with inventory plus usage event history.
    ```
 4. Open: `http://127.0.0.1:5000`
 
+## Deploy to Vercel
+
+This repo can run on Vercel as a concept/demo deployment.
+
+What changes in that mode:
+- The Flask app is exposed through `api/index.py`
+- SQLite/settings/bug reports write to a writable temp directory instead of the repo
+- Data is intentionally ephemeral and instance-local, so it can reset between cold starts, redeploys, or different serverless instances
+- USB scale reads are unavailable in serverless mode, but manual weight entry still works
+
+### Files added for Vercel
+
+- `vercel.json`
+- `requirements.txt`
+- `api/index.py`
+
+### Deploy steps
+
+1. Push the repo to GitHub.
+2. Import the repo into Vercel.
+3. Set the framework to **Other** if Vercel does not auto-detect it.
+4. Add an environment variable for `FLASK_SECRET_KEY`.
+5. Deploy.
+
+Optional environment variables:
+- `FILAMENT_LOGS_INSTANCE_KEY`: override the temp-storage folder name used per deployment instance
+- `DATABASE_PATH`: fully override the SQLite file path
+- `SETTINGS_PATH`: fully override the settings JSON path
+- `BUG_REPORTS_PATH`: fully override the bug-report JSONL path
+
+For Vercel, the default writable storage location is:
+
+```text
+/tmp/filament-logs/<instance-key>/
+```
+
+This is a good fit for sharing the MVP as a live concept, but not for production persistence. If you want durable shared data later, the next step would be moving inventory/settings storage to a managed database.
+
 ## XLSX to DB Conversion
 
 Convert an existing workbook into the SQLite format:

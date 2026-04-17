@@ -155,6 +155,11 @@
             <p class="app-page-meta app-page-subtitle">
                 Configure interface defaults, thresholds, scale behavior, backups, and update checks.
             </p>
+            {% if runtime_info.serverless %}
+            <p class="text-muted mb-0">
+                This deployment is running in serverless mode. Inventory, settings, and bug reports are stored in temporary instance-local files at <code>{{ runtime_info.writable_data_dir }}</code>.
+            </p>
+            {% endif %}
         </div>
         <div class="app-page-actions">
             <a href="{{ url_for('welcome', next=url_for('settings')) }}" class="btn btn-outline-secondary">Run Setup Guide</a>
@@ -228,7 +233,7 @@
                         <h2 class="h5 mb-1">Order Links</h2>
                         <p class="mb-1">
                             Favorites use brand-based order links from:
-                            <code>GUI/data/order_links.json</code>
+                            <code>{{ order_links_path }}</code>
                         </p>
                         <p class="text-muted mb-0">
                             Set <code>ORDER_LINKS_PATH</code> to override this file path.
@@ -247,7 +252,7 @@
                     Use the tabs below to edit general defaults and advanced behavior. All values save together.
                 </p>
             </div>
-            <small class="text-muted">Saved to <code>GUI/data/settings.json</code>.</small>
+            <small class="text-muted">Saved to <code>{{ settings_path }}</code>.</small>
         </div>
 
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">

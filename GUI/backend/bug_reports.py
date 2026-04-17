@@ -3,10 +3,10 @@ import os
 import uuid
 from datetime import datetime, timezone
 
-from backend.config import DATA_DIR
+from backend.config import WRITABLE_DATA_DIR
 
 SEVERITY_OPTIONS = ("critical", "high", "medium", "low")
-DEFAULT_BUG_REPORTS_PATH = os.path.join(DATA_DIR, "bug_reports.jsonl")
+DEFAULT_BUG_REPORTS_PATH = os.path.join(WRITABLE_DATA_DIR, "bug_reports.jsonl")
 
 
 def _utc_now_iso():

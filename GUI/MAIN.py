@@ -16,7 +16,8 @@ from backend import (
     spreadsheet_stats,
     usage_analytics,
 )
-from backend.config import EMPTY_THRESHOLD, LOW_THRESHOLD
+from backend.config import EMPTY_THRESHOLD, LOW_THRESHOLD, SETTINGS_PATH
+from backend.runtime_env import runtime_storage_summary
 from backend.workbook_store import (
     get_inventory_roll,
     list_inventory_rows,
@@ -179,9 +180,11 @@ def render_new_roll(step="info", **context):
 
 @app.context_processor
 def inject_app_settings():
+    runtime_info = runtime_storage_summary()
     return {
         "app_settings": settings_store.load_settings(),
         "app_release": app_release.load_local_release_info(),
+        "runtime_info": runtime_info,
     }
 
 
@@ -535,6 +538,10 @@ def log_filament():
 
 @app.route("/api/scale_weight")
 def api_scale_weight():
+    runtime_info = runtime_storage_summary()
+    if runtime_info["serverless"]:
+        return jsonify({"error": "Scale unavailable in serverless deployments"}), 503
+
     app_settings = settings_store.load_settings()
     timeout_sec, retry_count = get_scale_read_settings(app_settings)
     weight = data_manipulation.read_scale_weight(timeout_sec=timeout_sec, retry_count=retry_count)
@@ -1162,6 +1169,8 @@ def settings():
     return render_template(
         "settings.html",
         settings=current,
+        settings_path=SETTINGS_PATH,
+        order_links_path=order_links.load_order_links_config().get("path", ""),
         theme_options=settings_store.THEME_OPTIONS,
         alert_mode_options=settings_store.ALERT_MODE_OPTIONS,
         roll_condition_options=settings_store.ROLL_CONDITION_OPTIONS,
